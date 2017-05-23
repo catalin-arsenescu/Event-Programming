@@ -180,7 +180,7 @@ public class ClientGUI {
 		eventSelectTitle.setText("Select event:");
 		eventSelectTitle.setLayoutData(new GridData(GridData.HORIZONTAL_ALIGN_CENTER));
 		
-		EventAdministrationCombo combo = new EventAdministrationCombo(eventSelectGroup, SWT.NONE, fShell, fEventCache.toNameArray());
+		EventAdministrationCombo combo = new EventAdministrationCombo(eventSelectGroup, SWT.NONE, fShell, fClientConnection, fEventCache.toNameArray());
 		combo.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
 		
 		TabFolder tabFolder = new TabFolder (fEventAdminPage, SWT.BORDER);
