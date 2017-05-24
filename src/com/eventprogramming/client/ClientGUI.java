@@ -32,8 +32,12 @@ import org.eclipse.swt.widgets.Text;
 import com.eventprogramming.constants.Constants;
 import com.eventprogramming.event.Event;
 import com.eventprogramming.event.EventCache;
+import com.eventprogramming.gui.logic.PageMediator;
+import com.eventprogramming.gui.logic.WelcomePageMediator;
 import com.eventprogramming.utils.Utils;
 import com.eventprogramming.widgets.EventAdministrationCombo;
+
+import gucom.eventprogramming.gui.components.WelcomePageComposite;
 
 /**
  * Entry point for the user application Will start the graphical user interface
@@ -61,17 +65,17 @@ public class ClientGUI {
 	private Composite fJoinEventPage;
 	private Composite fEventAdminPage;
 	
-	public final EventCache fEventCache;
+	public EventCache fEventCache;
 
 	private STATE fState;
 
-	private String sessionUsername = null;
+	public String sessionUsername = null;
 
+	private PageMediator fWelcomeMediator;
 	
 	public ClientGUI(/* boolean readCredentialsFromSecureStorage */) {
 		initializeNonGui();
 
-		fEventCache = new EventCache();
 		/* Initialize display, shell, and main composite */
 		fDisplay = new Display();
 		fShell = new Shell(fDisplay);
@@ -95,7 +99,7 @@ public class ClientGUI {
 		fDisplay.dispose();
 	}
 
-	private void switchState(STATE state) {
+	public void switchState(STATE state) {
 		if (state == null)
 			return;
 		fState = state;
@@ -476,91 +480,13 @@ public class ClientGUI {
 	}
 
 	private void initializeWelcomePage() {
-		fWelcomePage = new Composite(fMainComposite, SWT.BORDER);
-
-		fWelcomePage.setLayout(new GridLayout(1, false));
-		Group mainGroup = new Group(fWelcomePage, SWT.NONE);
-		mainGroup.setLayout(new GridLayout(2, true));
-		mainGroup.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, true, true));
-
-		Label userLabel = new Label(mainGroup, SWT.NONE);
-		userLabel.setText("User name:");
-		userLabel.setLayoutData(new GridData(GridData.HORIZONTAL_ALIGN_CENTER));
-
-		Text userText = new Text(mainGroup, SWT.SINGLE | SWT.BORDER);
-		userText.setText("admin");
-		userText.setTextLimit(100);
-		userText.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
-
-		Label passLabel = new Label(mainGroup, SWT.NONE);
-		passLabel.setText("Password:");
-		passLabel.setLayoutData(new GridData(GridData.HORIZONTAL_ALIGN_CENTER));
-
-		Text passText = new Text(mainGroup, SWT.SINGLE | SWT.BORDER);
-		passText.setText("admin");
-		passText.setTextLimit(100);
-		passText.setEchoChar('*');
-		passText.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
-
-		Button buttonRegister = new Button(mainGroup, SWT.PUSH);
-		buttonRegister.setText("Register");
-		buttonRegister.setLayoutData(new GridData(GridData.HORIZONTAL_ALIGN_END));
-		buttonRegister.addSelectionListener(new SelectionListener() {
-
-			@Override
-			public void widgetSelected(SelectionEvent e) {
-				switchState(STATE.REGISTER);
-			}
-
-			@Override
-			public void widgetDefaultSelected(SelectionEvent e) {
-			}
-		});
-
-		Button buttonLogin = new Button(mainGroup, SWT.PUSH);
-		buttonLogin.setText("Login");
-		buttonLogin.setLayoutData(new GridData(GridData.HORIZONTAL_ALIGN_BEGINNING));
-		buttonLogin.addSelectionListener(new SelectionListener() {
-
-			@Override
-			public void widgetSelected(SelectionEvent e) {
-				if (checkInput()) {
-					boolean loginOK = fClientConnection.sendLogin(userText.getText(), passText.getText());
-					if (loginOK) {
-						sessionUsername = userText.getText();
-						fEventCache.setUsername(sessionUsername);
-						switchState(STATE.EVENT);
-					}	
-					else
-						openDialog(/* Error message */);
-				} else {
-					openDialog(/* Error message */);
-				}
-			}
-			
-			private void openDialog() {
-				// TODO Auto-generated method stub
-			}
-
-			private boolean checkInput() {
-				// TODO Do it better
-				if (userText.getText().isEmpty())
-					return false;
-
-				if (passText.getText().isEmpty())
-					return false;
-
-				return true;
-			}
-
-			@Override
-			public void widgetDefaultSelected(SelectionEvent e) {
-			}
-		});
+		fWelcomePage = new WelcomePageComposite(fMainComposite, SWT.BORDER, fWelcomeMediator);
 	}
 
 	private void initializeNonGui() {
 		fClientConnection = new ClientConnection(this);
+		fWelcomeMediator = new WelcomePageMediator(this, fClientConnection);
+		fEventCache = new EventCache();
 	}
 
 	public void reportError(String errorMessage) {
