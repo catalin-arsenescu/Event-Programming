@@ -92,7 +92,6 @@ public class EventAdministrationCombo extends Combo {
 			item.setText(tabName);
 			tabItems.add(item);
 		}
-			
 	}
 
 	public void buildTabComposites() {

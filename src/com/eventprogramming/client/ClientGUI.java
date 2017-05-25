@@ -33,6 +33,7 @@ import com.eventprogramming.constants.Constants;
 import com.eventprogramming.event.Event;
 import com.eventprogramming.event.EventCache;
 import com.eventprogramming.gui.components.CreateEventPageComposite;
+import com.eventprogramming.gui.components.EventAdminPageComposite;
 import com.eventprogramming.gui.components.HomePageComposite;
 import com.eventprogramming.gui.components.RegisterPageComposite;
 import com.eventprogramming.gui.components.WelcomePageComposite;
@@ -185,25 +186,8 @@ public class ClientGUI {
 	}
 
 	private void initializeEventAdministrationPage() {
-		fEventAdminPage = new Composite(fMainComposite, SWT.NONE);
-		fEventAdminPage.setLayout(new GridLayout(1, false));
-		
-		Group eventSelectGroup = new Group(fEventAdminPage, SWT.NONE);
-		eventSelectGroup.setLayout(new GridLayout(2, true));
-		eventSelectGroup.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, true, false));
-		
-		Label eventSelectTitle = new Label(eventSelectGroup, SWT.NONE);
-		eventSelectTitle.setText("Select event:");
-		eventSelectTitle.setLayoutData(new GridData(GridData.HORIZONTAL_ALIGN_CENTER));
-		
-		EventAdministrationCombo combo = new EventAdministrationCombo(eventSelectGroup, SWT.NONE, fShell, fClientConnection, fEventCache.toNameArray());
-		combo.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
-		
-		TabFolder tabFolder = new TabFolder (fEventAdminPage, SWT.BORDER);
-		combo.setTabFolder(tabFolder);
-		tabFolder.setLayoutData(new GridData(GridData.FILL_BOTH));
-		tabFolder.setVisible(false);
-
+		fEventAdminPage = new EventAdminPageComposite(fMainComposite, SWT.BORDER, 
+				new EventAdminPageMediator(this, fClientConnection), fEventCache.toNameArray());
 	}
 
 	private void initializeCreateEventPage() {

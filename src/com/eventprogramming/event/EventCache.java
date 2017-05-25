@@ -62,4 +62,9 @@ public class EventCache {
 	public void setUsername(String sessionUsername) {
 		this.username = sessionUsername;
 	}
+
+	public Event getByName(String eventName) {
+		List<Event> collected = eventCache.stream().filter(e -> e.getName().equals(eventName)).collect(Collectors.toList());
+		return collected.size() > 0 ? collected.get(0) : null;
+	}
 }

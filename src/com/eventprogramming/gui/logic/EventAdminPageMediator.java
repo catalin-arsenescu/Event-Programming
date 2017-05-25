@@ -5,63 +5,78 @@ import java.util.HashSet;
 import java.util.Set;
 
 import org.eclipse.swt.events.SelectionEvent;
+import org.eclipse.swt.widgets.Combo;
 import org.eclipse.swt.widgets.Control;
+import org.eclipse.swt.widgets.Shell;
+import org.eclipse.swt.widgets.TabFolder;
 import org.eclipse.swt.widgets.Text;
 
 import com.eventprogramming.client.ClientConnection;
 import com.eventprogramming.client.ClientGUI;
 import com.eventprogramming.client.ClientGUI.STATE;
+import com.eventprogramming.event.Event;
+import com.eventprogramming.gui.components.EventAdminPageComposite;
 import com.eventprogramming.utils.Utils;
 
 public class EventAdminPageMediator extends AbstractPageMediator {
 
-	private static String[] identifiers = { "buttonRegister", "emailText", "userText", "passText" };
+	private static String[] identifiers = { "combo", "tabFolder", "page-composite" };
+	
+	private int lastSelectedItemIndex;
 
 	public EventAdminPageMediator(ClientGUI clientGUI, ClientConnection clientConnection) {
 		super(clientGUI, clientConnection);
+		lastSelectedItemIndex = -1;
 	}
 
 	@Override
 	public void notifyEvent(Control control, SelectionEvent event) {
 		String identifier = getIdentifier(control);
-		if ("buttonRegister".equals(identifier)) {
-			register(control, event);
+		if ("combo".equals(identifier)) {
+			combo();
 		}
 	}
 
-	private void register(Control control, SelectionEvent event) {
-		if (checkInput()) {
-			Text userText = (Text) getControl("userText");
-			Text passText = (Text) getControl("passText");
-			Text emailText = (Text) getControl("emailText");
-			
-			boolean registerDone = fClientConnection.sendNewUserCredentials(userText.getText(),
-					passText.getText(), emailText.getText());
-			if (registerDone)
-				fClientGUI.switchState(STATE.WELCOME);
-		} else
-			Utils.openDialog(fClientGUI.getShell(), "Error",
-					"There was an error validating your input. Please double check you introduced a valid email address!",
+	
+	private void combo() {
+		Combo combo = (Combo) getControl("combo");
+		TabFolder tabFolder = (TabFolder) getControl("tabFolder");
+		Shell shell = fClientGUI.getShell();
+		
+		if (combo.getSelectionIndex() == lastSelectedItemIndex)
+			return;
+		
+		if (lastSelectedItemIndex >= 0) {
+			boolean okPressed = Utils.openDialog(shell, "Warning", 
+					"Switching to a new event will not save any modifications made after your last save. "
+					+ "If you have unsaved notifications cancel this dialog and come back when you saved them!",
 					() -> {},
 					() -> {});
-	}
-	
-	private boolean checkInput() {
+			
+			if (!okPressed) {
+				undoSelection();
+				return;
+			}
+		}
 		
-		Text userText = (Text) getControl("userText");
-		Text passText = (Text) getControl("passText");
-		Text emailText = (Text) getControl("emailText");
+		lastSelectedItemIndex = combo.getSelectionIndex();
 
-		if (userText.getText().isEmpty())
-			return false;
-	
-		if (passText.getText().isEmpty())
-			return false;
-	
-		if (emailText.getText().isEmpty())
-			return false;
-		
-		return true;
+		EventAdminPageComposite pageComposite = (EventAdminPageComposite) getControl("page-composite");
+		pageComposite.buildTabComposites(tabFolder, getSelectedEvent());
+	}
+
+	private Event getSelectedEvent() {
+		Combo combo = (Combo) getControl("combo");
+		String eventName = combo.getItem(lastSelectedItemIndex);
+		return fClientGUI.fEventCache.getByName(eventName);
+	}
+
+	private void undoSelection() {
+		if (lastSelectedItemIndex < 0)
+			return;
+
+		Combo combo = (Combo) getControl("combo");
+		combo.select(lastSelectedItemIndex);
 	}
 	
 	@Override
