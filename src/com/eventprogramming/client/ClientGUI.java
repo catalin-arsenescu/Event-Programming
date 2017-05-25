@@ -32,12 +32,19 @@ import org.eclipse.swt.widgets.Text;
 import com.eventprogramming.constants.Constants;
 import com.eventprogramming.event.Event;
 import com.eventprogramming.event.EventCache;
+import com.eventprogramming.gui.components.CreateEventPageComposite;
+import com.eventprogramming.gui.components.HomePageComposite;
+import com.eventprogramming.gui.components.RegisterPageComposite;
+import com.eventprogramming.gui.components.WelcomePageComposite;
+import com.eventprogramming.gui.logic.CreateEventPageMediator;
+import com.eventprogramming.gui.logic.EventAdminPageMediator;
+import com.eventprogramming.gui.logic.HomePageMediator;
+import com.eventprogramming.gui.logic.JoinEventPageMediator;
 import com.eventprogramming.gui.logic.PageMediator;
+import com.eventprogramming.gui.logic.RegisterPageMediator;
 import com.eventprogramming.gui.logic.WelcomePageMediator;
 import com.eventprogramming.utils.Utils;
 import com.eventprogramming.widgets.EventAdministrationCombo;
-
-import gucom.eventprogramming.gui.components.WelcomePageComposite;
 
 /**
  * Entry point for the user application Will start the graphical user interface
@@ -48,7 +55,7 @@ import gucom.eventprogramming.gui.components.WelcomePageComposite;
 public class ClientGUI {
 	
 	public enum STATE {
-		WELCOME, REGISTER, EVENT, CREATE_EVENT, JOIN_EVENT, EVENT_ADMINISTRATION
+		WELCOME, REGISTER, HOMEPAGE, CREATE_EVENT, JOIN_EVENT, EVENT_ADMINISTRATION
 	}
 
 	private ClientConnection fClientConnection;
@@ -60,7 +67,7 @@ public class ClientGUI {
 
 	private Composite fWelcomePage;
 	private Composite fRegisterPage;
-	private Composite fEventPage;
+	private Composite fHomePage;
 	private Composite fCreateEventPage;
 	private Composite fJoinEventPage;
 	private Composite fEventAdminPage;
@@ -72,6 +79,11 @@ public class ClientGUI {
 	public String sessionUsername = null;
 
 	private PageMediator fWelcomeMediator;
+	private PageMediator fRegisterMediator;
+	private PageMediator fHomePageMediator;
+	private PageMediator fCreateEventMediator;
+	private PageMediator fJoinEventMediator;
+	private PageMediator fEventAdminMediator;
 	
 	public ClientGUI(/* boolean readCredentialsFromSecureStorage */) {
 		initializeNonGui();
@@ -114,9 +126,9 @@ public class ClientGUI {
 			fLayout.topControl = fRegisterPage;
 			boundsForState = getBoundsForState(STATE.REGISTER);
 			break;
-		case EVENT:
-			fLayout.topControl = fEventPage;
-			boundsForState = getBoundsForState(STATE.EVENT);
+		case HOMEPAGE:
+			fLayout.topControl = fHomePage;
+			boundsForState = getBoundsForState(STATE.HOMEPAGE);
 			break;
 		case CREATE_EVENT:
 			fLayout.topControl = fCreateEventPage;
@@ -144,7 +156,7 @@ public class ClientGUI {
 		switch (state) {
 		case WELCOME:
 		case REGISTER:
-		case EVENT:
+		case HOMEPAGE:
 		case CREATE_EVENT:
 		case JOIN_EVENT:
 		case EVENT_ADMINISTRATION:
@@ -195,150 +207,7 @@ public class ClientGUI {
 	}
 
 	private void initializeCreateEventPage() {
-		fCreateEventPage = new Composite(fMainComposite, SWT.NONE);
-		fCreateEventPage.setLayout(new GridLayout(1, false));
-
-		Group mainGroup = new Group(fCreateEventPage, SWT.NONE);
-		mainGroup.setLayout(new GridLayout(2, true));
-		mainGroup.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, true, true));
-		
-		Label eventNameLabel = new Label(mainGroup, SWT.NONE);
-		eventNameLabel.setText("Event name:");
-		eventNameLabel.setLayoutData(new GridData(GridData.HORIZONTAL_ALIGN_CENTER));
-		Text eventNameText = new Text(mainGroup, SWT.SINGLE | SWT.BORDER);
-		eventNameText.setText("Event Programming Opening Ceremony");
-		eventNameText.setTextLimit(100);
-		eventNameText.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
-		
-		Label typeLabel = new Label(mainGroup, SWT.NONE);
-		typeLabel.setText("Event type:");
-		typeLabel.setLayoutData(new GridData(GridData.HORIZONTAL_ALIGN_CENTER));
-
-		Group eventTypeButtonsGroup = new Group(mainGroup, SWT.NONE);
-		eventTypeButtonsGroup.setLayout(new GridLayout(2, true));
-		eventTypeButtonsGroup.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, true, true));
-		
-		Button greedyTypeButton = new Button(eventTypeButtonsGroup, SWT.RADIO);
-		greedyTypeButton.setText("Greedy");
-		greedyTypeButton.setSelection(true);
-		greedyTypeButton.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
-		
-		Button freeTypeButton = new Button(eventTypeButtonsGroup, SWT.RADIO);
-		freeTypeButton.setText("Free");
-		freeTypeButton.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
-		
-		Label startDateLabel = new Label(mainGroup, SWT.NONE);
-		startDateLabel.setText("Earliest starting date:");
-		startDateLabel.setLayoutData(new GridData(GridData.HORIZONTAL_ALIGN_CENTER));
-		DateTime startDateTime = new DateTime(mainGroup, SWT.BORDER | SWT.DATE | SWT.DROP_DOWN);
-		startDateTime.setDate(2017, 7, 1);
-		startDateTime.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
-		
-		Label endDateLabel = new Label(mainGroup, SWT.NONE);
-		endDateLabel.setText("Latest ending date:");
-		endDateLabel.setLayoutData(new GridData(GridData.HORIZONTAL_ALIGN_CENTER));
-		DateTime endDateTime = new DateTime(mainGroup, SWT.BORDER | SWT.DATE | SWT.DROP_DOWN);
-		endDateTime.setDate(2017, 7, 13);
-		endDateTime.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
-		
-		Label durationLabel = new Label(mainGroup, SWT.NONE);
-		durationLabel.setText("Duration:");
-		durationLabel.setLayoutData(new GridData(GridData.HORIZONTAL_ALIGN_CENTER));
-		Spinner durationSpinner = new Spinner(mainGroup, SWT.NONE);
-		durationSpinner.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
-		durationSpinner.setMinimum(0);
-		durationSpinner.setMaximum(23);
-		durationSpinner.setSelection(4);
-		durationSpinner.setIncrement(1);
-		
-		Label startHourLabel = new Label(mainGroup, SWT.NONE);
-		startHourLabel.setText("Earliest start hour:");
-		startHourLabel.setLayoutData(new GridData(GridData.HORIZONTAL_ALIGN_CENTER));
-		Spinner startHourSpinner = new Spinner(mainGroup, SWT.NONE);
-		startHourSpinner.setLayoutData(new GridData(GridData.HORIZONTAL_ALIGN_CENTER));
-		startHourSpinner.setMinimum(0);
-		startHourSpinner.setMaximum(23);
-		startHourSpinner.setSelection(16);
-		startHourSpinner.setIncrement(1);
-		
-		Label endHourLabel = new Label(mainGroup, SWT.NONE);
-		endHourLabel.setText("Latest ending hour:");
-		endHourLabel.setLayoutData(new GridData(GridData.HORIZONTAL_ALIGN_CENTER));
-		Spinner endHourSpinner = new Spinner(mainGroup, SWT.NONE);
-		endHourSpinner.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
-		endHourSpinner.setMinimum(0);
-		endHourSpinner.setMaximum(24);
-		endHourSpinner.setSelection(24);
-		endHourSpinner.setIncrement(1);
-		
-		Button buttonCreateEvent = new Button(fCreateEventPage, SWT.PUSH);
-		buttonCreateEvent.setText("Create Event");
-		buttonCreateEvent.setLayoutData(new GridData(GridData.HORIZONTAL_ALIGN_CENTER));
-		buttonCreateEvent.addSelectionListener(new SelectionListener() {
-
-			@Override
-			public void widgetSelected(SelectionEvent e) {
-				if (checkInput()) {
-					String createEventOk = fClientConnection.sendNewEvent(
-										eventNameText.getText(),
-										greedyTypeButton.getSelection(),
-										startDateTime,
-										endDateTime,
-										startHourSpinner.getSelection(),
-										endHourSpinner.getSelection(),
-										durationSpinner.getSelection(),
-										sessionUsername);
-					if (createEventOk != "ERROR") {
-						// Save event in cache
-						Event event = new Event(eventNameText.getText(),
-								sessionUsername,
-								greedyTypeButton.getSelection() ? 1 : 0,
-								Utils.getDateFromDateTime(startDateTime),
-								Utils.getDateFromDateTime(endDateTime),
-								startHourSpinner.getSelection(),
-								endHourSpinner.getSelection(),
-								durationSpinner.getSelection(),
-								createEventOk);
-						fEventCache.addEvent(event);
-						
-						Utils.openDialog(fShell, "Success",
-								"Event was successfully created! However you still need to: \n" +
-								"a) Generate or manually create event intervals for others to vote \n" + 
-								"b) Share the event code to the participants so they can vote \n" +
-								"These can be done from the 'Event administration page'. You will be redirected there now!",
-								() -> switchState(STATE.EVENT_ADMINISTRATION),
-								() -> switchState(STATE.EVENT));
-					} else {
-						Utils.openDialog(fShell, "Create event ERROR",
-								Constants.SERVER_OFFLINE_ERROR,
-								() -> {},
-								() -> {});
-					}
-				} else {
-					Utils.openDialog(fShell, "Create event ERROR",
-							"There was an error creating the event! "
-							+ "Double check your input is consistent(e.g. startDate is before endDate",
-							() -> {},
-							() -> {});
-				}
-			}
-
-			private boolean checkInput() {
-				if (eventNameText.getText().isEmpty())
-					return false;
-				
-				if (!greedyTypeButton.getSelection() && !freeTypeButton.getSelection())
-					return false;
-				
-				return true;
-			}
-
-			@Override
-			public void widgetDefaultSelected(SelectionEvent e) {
-				widgetSelected(e);
-			}
-
-		});
+		fCreateEventPage = new CreateEventPageComposite(fMainComposite, SWT.BORDER, fCreateEventMediator);
 	}
 	
 	private void initializeJoinEventPage() {
@@ -346,137 +215,11 @@ public class ClientGUI {
 	}
 
 	private void initializeEventPage() {
-		fEventPage = new Composite(fMainComposite, SWT.NONE);
-
-		fEventPage.setLayout(new GridLayout(1, false));
-		
-		Group mainGroup = new Group(fEventPage, SWT.NONE);
-		mainGroup.setLayout(new GridLayout(2, true));
-		mainGroup.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, true, true));
-
-		Button createEventButton = new Button(mainGroup, SWT.NONE);
-		createEventButton.setText("Create an Event");
-		createEventButton.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
-		createEventButton.addSelectionListener(new SelectionListener() {
-
-			@Override
-			public void widgetSelected(SelectionEvent e) {
-				switchState(STATE.CREATE_EVENT);
-			}
-
-			@Override
-			public void widgetDefaultSelected(SelectionEvent e) {
-				widgetSelected(e);				
-			}
-		});
-		
-		Button joinEventButton = new Button(mainGroup, SWT.NONE);
-		joinEventButton.setText("Join an Event");
-		joinEventButton.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
-		joinEventButton.addSelectionListener(new SelectionListener() {
-
-			@Override
-			public void widgetSelected(SelectionEvent e) {
-				switchState(STATE.JOIN_EVENT);
-			}
-
-			@Override
-			public void widgetDefaultSelected(SelectionEvent e) {
-				widgetSelected(e);				
-			}
-		});
-		
-		Button eventAdminButton = new Button(mainGroup, SWT.NONE);
-		eventAdminButton.setText("Administrate your events");
-		eventAdminButton.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
-		eventAdminButton.addSelectionListener(new SelectionListener() {
-
-			@Override
-			public void widgetSelected(SelectionEvent e) {
-				switchState(STATE.EVENT_ADMINISTRATION);
-			}
-
-			@Override
-			public void widgetDefaultSelected(SelectionEvent e) {
-				widgetSelected(e);				
-			}
-		});
-		
+		fHomePage = new HomePageComposite(fMainComposite, SWT.BORDER, fHomePageMediator);
 	}
 
 	private void initializeRegisterPage() {
-		fRegisterPage = new Composite(fMainComposite, SWT.BORDER);
-
-		fRegisterPage.setLayout(new GridLayout(1, false));
-		Group mainGroup = new Group(fRegisterPage, SWT.NONE);
-		mainGroup.setLayout(new GridLayout(2, true));
-		mainGroup.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, true, true));
-
-		Label userLabel = new Label(mainGroup, SWT.NONE);
-		userLabel.setText("User name:");
-		userLabel.setLayoutData(new GridData(GridData.HORIZONTAL_ALIGN_CENTER));
-		Text userText = new Text(mainGroup, SWT.SINGLE | SWT.BORDER);
-		userText.setText("");
-		userText.setTextLimit(100);
-		userText.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
-
-		Label passLabel = new Label(mainGroup, SWT.NONE);
-		passLabel.setText("Password:");
-		passLabel.setLayoutData(new GridData(GridData.HORIZONTAL_ALIGN_CENTER));
-		Text passText = new Text(mainGroup, SWT.SINGLE | SWT.BORDER);
-		passText.setText("");
-		passText.setTextLimit(100);
-		passText.setEchoChar('*');
-		passText.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
-
-		Label emailLabel = new Label(mainGroup, SWT.NONE);
-		emailLabel.setText("Email:");
-		emailLabel.setLayoutData(new GridData(GridData.HORIZONTAL_ALIGN_CENTER));
-		Text emailText = new Text(mainGroup, SWT.SINGLE | SWT.BORDER);
-		emailText.setText("");
-		emailText.setTextLimit(100);
-		emailText.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
-
-		Button buttonRegister = new Button(fRegisterPage, SWT.PUSH);
-		buttonRegister.setText("Register");
-		buttonRegister.setLayoutData(new GridData(GridData.HORIZONTAL_ALIGN_CENTER));
-		buttonRegister.addSelectionListener(new SelectionListener() {
-
-			@Override
-			public void widgetSelected(SelectionEvent e) {
-				if (checkInput()) {
-					boolean registerDone = fClientConnection.sendNewUserCredentials(userText.getText(),
-							passText.getText(), emailText.getText());
-//					fClientConnection.sendHello();
-					if (registerDone)
-						switchState(STATE.WELCOME);
-				} else
-					openDialog();
-			}
-
-			private void openDialog() {
-				// TODO Auto-generated method stub
-			}
-
-			private boolean checkInput() {
-				// TODO Do it better
-				if (userText.getText().isEmpty())
-					return false;
-
-				if (passText.getText().isEmpty())
-					return false;
-
-				if (emailText.getText().isEmpty())
-					return false;
-
-				return true;
-			}
-
-			@Override
-			public void widgetDefaultSelected(SelectionEvent e) {
-			}
-
-		});
+		fRegisterPage = new RegisterPageComposite(fMainComposite, SWT.BORDER, fRegisterMediator);
 	}
 
 	private void initializeWelcomePage() {
@@ -486,6 +229,11 @@ public class ClientGUI {
 	private void initializeNonGui() {
 		fClientConnection = new ClientConnection(this);
 		fWelcomeMediator = new WelcomePageMediator(this, fClientConnection);
+		fRegisterMediator = new RegisterPageMediator(this, fClientConnection);
+		fHomePageMediator = new HomePageMediator(this, fClientConnection);
+		fCreateEventMediator = new CreateEventPageMediator(this, fClientConnection);
+		fJoinEventMediator = new JoinEventPageMediator(this, fClientConnection);
+		fEventAdminMediator = new EventAdminPageMediator(this, fClientConnection);
 		fEventCache = new EventCache();
 	}
 
@@ -495,7 +243,23 @@ public class ClientGUI {
 		messageBox.open();
 	}
 
+	public Shell getShell() {
+		return fShell;
+	}
+	
 	public static void main(String[] args) {
 		new ClientGUI();
+	}
+
+	public void setUsername(String text) {
+		sessionUsername = text;
+	}
+	
+	public String getUsername() {
+		return sessionUsername;
+	}
+
+	public EventCache getEventCache() {
+		return fEventCache;
 	}
 }

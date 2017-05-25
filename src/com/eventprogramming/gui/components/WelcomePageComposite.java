@@ -1,4 +1,4 @@
-package gucom.eventprogramming.gui.components;
+package com.eventprogramming.gui.components;
 
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.layout.GridData;
@@ -18,13 +18,14 @@ public class WelcomePageComposite extends Composite {
 	
 	public WelcomePageComposite(Composite parent, int style, PageMediator mediator) {
 		super(parent, style);
+		setLayout(new GridLayout(1, false));
+		
 		fMediator = mediator;
 		buildComposite();
 	}
 
 	private void buildComposite() {
 
-		setLayout(new GridLayout(1, false));
 		Group mainGroup = new Group(this, SWT.NONE);
 		mainGroup.setLayout(new GridLayout(2, true));
 		mainGroup.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, true, true));
