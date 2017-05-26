@@ -160,11 +160,16 @@ public class ClientGUI {
 		case HOMEPAGE:
 		case CREATE_EVENT:
 		case JOIN_EVENT:
-		case EVENT_ADMINISTRATION:
 			width = clientArea.width / 2;
 			height = clientArea.height / 2;
 			x = width / 2;
 			y = height / 2;
+			return new Rectangle(x, y, width, height);
+		case EVENT_ADMINISTRATION:
+			width = clientArea.width * 2 / 3;
+			height = clientArea.height * 2 / 3;
+			x = width / 6;
+			y = height / 6;
 			return new Rectangle(x, y, width, height);
 		}
 

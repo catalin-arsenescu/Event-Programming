@@ -3,6 +3,8 @@ package com.eventprogramming.utils;
 import java.text.DateFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
+import java.time.LocalDate;
+import java.time.ZoneId;
 import java.util.Date;
 import java.util.GregorianCalendar;
 
@@ -26,8 +28,9 @@ public class Utils {
 	}
 	
 	public static String getDateString(java.sql.Date sqlDate) {
-		Date date = new GregorianCalendar(sqlDate.getYear(), sqlDate.getMonth(), sqlDate.getDay()).getTime();
-		return sdf.format(date);
+		java.util.Date newDate = new java.util.Date(sqlDate.getTime());
+		LocalDate start = newDate.toInstant().atZone(ZoneId.systemDefault()).toLocalDate();
+		return start.toString();
 	}
 	
 	public static Date getDateFromString(String dateString) {
@@ -49,6 +52,10 @@ public class Utils {
 			cancelAction.run();
 		
 		return result;
+	}
+
+	public static boolean checkDateWithDateInterval(Date minStartDate, Date tmp, Date maxEndDate) {
+		return true;
 	}
 	
 

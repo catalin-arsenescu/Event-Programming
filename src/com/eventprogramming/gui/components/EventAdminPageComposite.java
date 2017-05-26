@@ -9,8 +9,10 @@ import org.eclipse.swt.widgets.Button;
 import org.eclipse.swt.widgets.Combo;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Control;
+import org.eclipse.swt.widgets.DateTime;
 import org.eclipse.swt.widgets.Group;
 import org.eclipse.swt.widgets.Label;
+import org.eclipse.swt.widgets.Spinner;
 import org.eclipse.swt.widgets.TabFolder;
 import org.eclipse.swt.widgets.TabItem;
 import org.eclipse.swt.widgets.Table;
@@ -135,26 +137,55 @@ public class EventAdminPageComposite extends Composite {
 		buttonsGroup.setLayout(new GridLayout(2, true));
 		buttonsGroup.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, true, false));
 		
+		Group addGroup = new Group(buttonsGroup, SWT.NONE);
+		addGroup.setLayout(new GridLayout(2, true));
+		addGroup.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, true, false));
+		
+		Label dateLabel = new Label(addGroup, SWT.NONE);
+		dateLabel.setText("Earliest starting date:");
+		dateLabel.setLayoutData(new GridData(GridData.HORIZONTAL_ALIGN_CENTER));
+		DateTime dateTime = new DateTime(addGroup, SWT.BORDER | SWT.DATE | SWT.DROP_DOWN);
+		dateTime.setDate(2017, 7, 1);
+		dateTime.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
+		fMediator.registerControl(dateTime, "dateTime");
+		
+		Label startHourLabel = new Label(addGroup, SWT.NONE);
+		startHourLabel.setText("Earliest start hour:");
+		startHourLabel.setLayoutData(new GridData(GridData.HORIZONTAL_ALIGN_CENTER));
+		Spinner startHourSpinner = new Spinner(addGroup, SWT.NONE);
+		startHourSpinner.setLayoutData(new GridData(GridData.HORIZONTAL_ALIGN_CENTER));
+		startHourSpinner.setMinimum(event.getStartHour());
+		startHourSpinner.setMaximum(event.getEndHour());
+		startHourSpinner.setSelection(event.getStartHour());
+		startHourSpinner.setIncrement(1);
+		fMediator.registerControl(startHourSpinner, "startHourSpinner");
+		
+		Group generateGroup = new Group(buttonsGroup, SWT.NONE);
+		generateGroup.setLayout(new GridLayout(2, true));
+		generateGroup.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, true, false));
+		
+		Label incrementLabel = new Label(generateGroup, SWT.NONE);
+		incrementLabel.setText("Increment between intervals(in hours)");
+		incrementLabel.setLayoutData(new GridData(GridData.HORIZONTAL_ALIGN_CENTER));
+		Spinner incrementSpinner = new Spinner(generateGroup, SWT.NONE);
+		incrementSpinner.setLayoutData(new GridData(GridData.HORIZONTAL_ALIGN_CENTER));
+		incrementSpinner.setMinimum(1);
+		incrementSpinner.setMaximum(event.getDuration());
+		incrementSpinner.setSelection(event.getDuration());
+		incrementSpinner.setIncrement(1);
+		fMediator.registerControl(incrementSpinner, "incrementSpinner");
+		
 		Button addButton = new Button(buttonsGroup, SWT.PUSH);
 		addButton.setText("Add entry");
 		addButton.setLayoutData(new GridData(GridData.HORIZONTAL_ALIGN_CENTER));
-		addButton.addSelectionListener(new SelectionListener() {
-
-			@Override
-			public void widgetSelected(SelectionEvent e) {
-				
-			}
-
-			@Override
-			public void widgetDefaultSelected(SelectionEvent e) {
-				widgetSelected(e);
-			}
-			
-		});
+		fMediator.registerControl(addButton, "addButton");
+		addButton.addSelectionListener(new DefaultSelectionListener(fMediator, addButton));
 		
 		Button generateButton = new Button(buttonsGroup, SWT.PUSH);
 		generateButton.setText("Generate entries");
 		generateButton.setLayoutData(new GridData(GridData.HORIZONTAL_ALIGN_CENTER));
+		fMediator.registerControl(generateButton, "generateButton");
+		generateButton.addSelectionListener(new DefaultSelectionListener(fMediator, generateButton));
 		return main;
 	}
 

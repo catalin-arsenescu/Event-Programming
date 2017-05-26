@@ -43,8 +43,11 @@ public class Constants {
 	public static final String		LOGIN_SERVICE					= "login";
 	public static final String 		CREATE_EVENT_SERVICE 			= "create-event";
 	public static final String 		CREATE_EVENT_INTERVAL_SERVICE 	= "create-event-interval";
+	public static final String 		GENERATE_INTERVALS_SERVICE 		= "generate-event-intervals";
 
 	public static final String 		SERVER_OFFLINE_ERROR 	= "Server cannot be reached! Check your Internet connection and try again!";
+
+
 
 
 

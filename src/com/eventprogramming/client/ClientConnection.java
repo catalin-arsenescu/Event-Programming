@@ -183,9 +183,12 @@ public class ClientConnection {
 		return "ERROR";
 	}
 	
+	public String sendNewEventInterval(String eventCode, DateTime date, int startHour, int endHour) {
+		return sendNewEventInterval(eventCode, Utils.getDateString(date), startHour, endHour);
+	}
+	
 	@SuppressWarnings("unchecked")
-	public String sendNewEventInterval(String eventCode, DateTime date, int startHour) {
-
+	public String sendNewEventInterval(String eventCode, String date, int startHour, int endHour) {
 		int port = getPort(Constants.CREATE_EVENT_INTERVAL_SERVICE);
 		if (port < 0) {
 			fClientGUI.reportError(Constants.SERVER_OFFLINE_ERROR);
@@ -194,8 +197,9 @@ public class ClientConnection {
 		
 		JSONObject json = new JSONObject();
 		json.put(Constants.EVENT_CODE_KEYWORD, eventCode);
-		json.put(Constants.DATE_KEYWORD, Utils.getDateString(date));
+		json.put(Constants.DATE_KEYWORD, date);
 		json.put(Constants.START_HOUR_KEYWORD, startHour);
+		json.put(Constants.END_HOUR_KEYWORD, endHour);
 		
 		String message = json.toJSONString() + '\n';
 		System.out.println("SENDING" + message);

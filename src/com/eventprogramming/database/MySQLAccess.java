@@ -215,11 +215,11 @@ public class MySQLAccess {
 	private int getIdFromEventCode(String eventCode) {
 
 		 try {
-			PreparedStatement preparedStatement = fConnect.prepareStatement("select * from feedback.ep_event where event_code= ?;");
+			PreparedStatement preparedStatement = fConnect.prepareStatement("select event_id from feedback.ep_event where event_code=?;");
 			preparedStatement.setString(1, eventCode);
 			ResultSet executeQuery = preparedStatement.executeQuery();
 			while (executeQuery.next()) {
-				return executeQuery.getInt("id");
+				return executeQuery.getInt("event_id");
 			}
 		} catch (SQLException e) {
 			// TODO Auto-generated catch block
