@@ -35,6 +35,7 @@ import com.eventprogramming.event.EventCache;
 import com.eventprogramming.gui.components.CreateEventPageComposite;
 import com.eventprogramming.gui.components.EventAdminPageComposite;
 import com.eventprogramming.gui.components.HomePageComposite;
+import com.eventprogramming.gui.components.JoinEventPageComposite;
 import com.eventprogramming.gui.components.RegisterPageComposite;
 import com.eventprogramming.gui.components.WelcomePageComposite;
 import com.eventprogramming.gui.logic.CreateEventPageMediator;
@@ -85,6 +86,7 @@ public class ClientGUI {
 	private PageMediator fCreateEventMediator;
 	private PageMediator fJoinEventMediator;
 	private PageMediator fEventAdminMediator;
+	private PageMediator fJoinEventPageMediator;
 	
 	public ClientGUI(/* boolean readCredentialsFromSecureStorage */) {
 		initializeNonGui();
@@ -159,12 +161,12 @@ public class ClientGUI {
 		case REGISTER:
 		case HOMEPAGE:
 		case CREATE_EVENT:
-		case JOIN_EVENT:
 			width = clientArea.width / 2;
 			height = clientArea.height / 2;
 			x = width / 2;
 			y = height / 2;
 			return new Rectangle(x, y, width, height);
+		case JOIN_EVENT:
 		case EVENT_ADMINISTRATION:
 			width = clientArea.width * 2 / 3;
 			height = clientArea.height * 2 / 3;
@@ -185,22 +187,21 @@ public class ClientGUI {
 		initializeRegisterPage();
 		initializeEventPage();
 		initializeCreateEventPage();
-		initializeJoinEventPage();
 		initializeEventAdministrationPage();
 
 	}
 
 	private void initializeEventAdministrationPage() {
 		fEventAdminPage = new EventAdminPageComposite(fMainComposite, SWT.BORDER, 
-				new EventAdminPageMediator(this, fClientConnection), fEventCache.toNameArray());
+				new EventAdminPageMediator(this, fClientConnection), fEventCache.toNameArray(sessionUsername));
 	}
 
 	private void initializeCreateEventPage() {
 		fCreateEventPage = new CreateEventPageComposite(fMainComposite, SWT.BORDER, fCreateEventMediator);
 	}
 	
-	private void initializeJoinEventPage() {
-		
+	public void initializeJoinEventPage(Event event) {
+		fJoinEventPage = new JoinEventPageComposite(fMainComposite, SWT.BORDER, fJoinEventPageMediator, event);
 	}
 
 	private void initializeEventPage() {
@@ -223,6 +224,7 @@ public class ClientGUI {
 		fCreateEventMediator = new CreateEventPageMediator(this, fClientConnection);
 		fJoinEventMediator = new JoinEventPageMediator(this, fClientConnection);
 		fEventAdminMediator = new EventAdminPageMediator(this, fClientConnection);
+		fJoinEventPageMediator = new JoinEventPageMediator(this, fClientConnection);
 		fEventCache = new EventCache();
 	}
 
@@ -251,4 +253,5 @@ public class ClientGUI {
 	public EventCache getEventCache() {
 		return fEventCache;
 	}
+
 }

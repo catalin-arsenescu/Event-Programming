@@ -26,48 +26,52 @@ public class MySQLAccess {
 		try {
 			Class.forName("com.mysql.jdbc.Driver");
 			// Setup the connection with the DB
-			fConnect = DriverManager
-					.getConnection(Constants.DB_SCHEMA_ADDRESS + Constants.DB_CREDENTIALS);
+			fConnect = DriverManager.getConnection(Constants.DB_SCHEMA_ADDRESS + Constants.DB_CREDENTIALS);
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
 	}
-	
+
 	public void readDataBase() throws Exception {
 		try {
-			
-//			// Statements allow to issue SQL queries to the database
-//			statement = fConnect.createStatement();
-//			// Result set get the result of the SQL query
-//			resultSet = statement.executeQuery("select * from feedback.comments");
-//			writeResultSet(resultSet);
 
-//			// PreparedStatements can use variables and are more efficient
-//			preparedStatement = connect
-//					.prepareStatement("insert into  feedback.comments values (default, ?, ?, ?, ? , ?, ?)");
-//			// "myuser, webpage, datum, summary, COMMENTS from
-//			// feedback.comments");
-//			// Parameters start with 1
-//			preparedStatement.setString(1, "Test");
-//			preparedStatement.setString(2, "TestEmail");
-//			preparedStatement.setString(3, "TestWebpage");
-//			preparedStatement.setDate(4, new java.sql.Date(2009, 12, 11));
-//			preparedStatement.setString(5, "TestSummary");
-//			preparedStatement.setString(6, "TestComment");
-//			preparedStatement.executeUpdate();
-//
-//			preparedStatement = connect
-//					.prepareStatement("SELECT myuser, webpage, datum, summary, COMMENTS from feedback.comments");
-//			resultSet = preparedStatement.executeQuery();
-//			writeResultSet(resultSet);
-//
-//			// Remove again the insert comment
-//			preparedStatement = connect.prepareStatement("delete from feedback.comments where myuser= ? ; ");
-//			preparedStatement.setString(1, "Test");
-//			preparedStatement.executeUpdate();
-//
-//			resultSet = statement.executeQuery("select * from feedback.comments");
-//			writeMetaData(resultSet);
+			// // Statements allow to issue SQL queries to the database
+			// statement = fConnect.createStatement();
+			// // Result set get the result of the SQL query
+			// resultSet = statement.executeQuery("select * from
+			// feedback.comments");
+			// writeResultSet(resultSet);
+
+			// // PreparedStatements can use variables and are more efficient
+			// preparedStatement = connect
+			// .prepareStatement("insert into feedback.comments values (default,
+			// ?, ?, ?, ? , ?, ?)");
+			// // "myuser, webpage, datum, summary, COMMENTS from
+			// // feedback.comments");
+			// // Parameters start with 1
+			// preparedStatement.setString(1, "Test");
+			// preparedStatement.setString(2, "TestEmail");
+			// preparedStatement.setString(3, "TestWebpage");
+			// preparedStatement.setDate(4, new java.sql.Date(2009, 12, 11));
+			// preparedStatement.setString(5, "TestSummary");
+			// preparedStatement.setString(6, "TestComment");
+			// preparedStatement.executeUpdate();
+			//
+			// preparedStatement = connect
+			// .prepareStatement("SELECT myuser, webpage, datum, summary,
+			// COMMENTS from feedback.comments");
+			// resultSet = preparedStatement.executeQuery();
+			// writeResultSet(resultSet);
+			//
+			// // Remove again the insert comment
+			// preparedStatement = connect.prepareStatement("delete from
+			// feedback.comments where myuser= ? ; ");
+			// preparedStatement.setString(1, "Test");
+			// preparedStatement.executeUpdate();
+			//
+			// resultSet = statement.executeQuery("select * from
+			// feedback.comments");
+			// writeMetaData(resultSet);
 
 		} catch (Exception e) {
 			throw e;
@@ -85,26 +89,25 @@ public class MySQLAccess {
 
 			Statement statement = fConnect.createStatement();
 			// Result set get the result of the SQL query
-			String command = "select * from feedback.epuser "
-					+ "where username=" + "\"" + username +"\"";
+			String command = "select * from feedback.epuser " + "where username=" + "\"" + username + "\"";
 			ResultSet resultSet = statement.executeQuery(command);
 			if (!resultSet.next())
 				return "ERROR";
-			
+
 			String DBUser = resultSet.getString("username");
 			String DBPassword = resultSet.getString("password");
 			String DBSalt = resultSet.getString("salt");
-			
+
 			// Verify password
 			password += DBSalt;
 			MessageDigest messageDigest = MessageDigest.getInstance("SHA-256");
 			messageDigest.update(password.getBytes());
 			String encryptedPassword = new String(messageDigest.digest());
-			
+
 			boolean passwordOK = DBPassword.equals(encryptedPassword);
 			if (!passwordOK)
 				return "ERROR";
-			
+
 			return getEventsForUsername(username).toJSONString();
 		} catch (Exception e) {
 			// TODO: handle exception
@@ -117,51 +120,49 @@ public class MySQLAccess {
 		String command;
 		ResultSet resultSet;
 		Statement statement = fConnect.createStatement();
-		
-		command = "select * from feedback.ep_event "
-				+ "where initiator=" + "\"" + username +"\"";
+
+		command = "select * from feedback.ep_event " + "where initiator=" + "\"" + username + "\"";
 		resultSet = statement.executeQuery(command);
 		JSONObject result = new JSONObject();
 		int i = 1;
 		while (resultSet.next()) {
 			JSONObject event = new JSONObject();
-			
+
 			String name = resultSet.getString("event_name");
 			event.put(Constants.EVENT_NAME_KEYWORD, name);
-			
+
 			int type = resultSet.getInt("is_greedy");
 			event.put(Constants.GREEDY_KEYWORD, type);
-			
+
 			java.sql.Date startDate = resultSet.getDate("start_date");
 			event.put(Constants.MIN_START_DATE_KEYWORD, Utils.getDateString(startDate));
 
 			java.sql.Date endDate = resultSet.getDate("end_date");
 			event.put(Constants.MAX_END_DATE_KEYWORD, Utils.getDateString(endDate));
-			
+
 			int startHour = resultSet.getInt("start_hour");
 			event.put(Constants.START_HOUR_KEYWORD, startHour);
 
 			int endHour = resultSet.getInt("end_hour");
 			event.put(Constants.END_HOUR_KEYWORD, endHour);
-			
+
 			int duration = resultSet.getInt("duration");
 			event.put(Constants.DURATION_KEYWORD, duration);
-			
+
 			String eventCode = resultSet.getString("event_code");
 			event.put(Constants.EVENT_CODE_KEYWORD, eventCode);
-			
+
 			result.put(Constants.EVENT_KEYWORD + i++, event);
 		}
-		
+
 		return result;
 	}
-	
+
 	/**
-	 * Inserts event into database
-	 * TODO check if event exists
+	 * Inserts event into database TODO check if event exists
 	 */
-	public String insertEvent(String eventName, int isGreedy, String startDate, String endDate,
-			int startHour, int endHour, int duration, String username, String eventCode) {
+	public String insertEvent(String eventName, int isGreedy, String startDate, String endDate, int startHour,
+			int endHour, int duration, String username, String eventCode) {
 		try {
 			fPreparedStatement = fConnect.prepareStatement("insert into feedback.ep_event"
 					+ " (is_greedy, start_date, end_date, start_hour, end_hour, duration, initiator, event_code, event_name)"
@@ -176,46 +177,45 @@ public class MySQLAccess {
 			fPreparedStatement.setString(8, eventCode);
 			fPreparedStatement.setString(9, eventName);
 			fPreparedStatement.executeUpdate();
-			
+
 			return eventCode;
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
-		
+
 		return "ERROR";
 	}
-	
+
 	/**
-	 * Inserts event into database
-	 * TODO check if event exists
+	 * Inserts event into database TODO check if event exists
 	 */
 	public String insertEventInterval(String eventCode, String date, int startHour, int endHour) {
 		try {
 			int eventId = getIdFromEventCode(eventCode);
 			if (eventId < 0)
 				return "ERROR";
-			
+
 			fPreparedStatement = fConnect.prepareStatement("insert into feedback.ep_greedy_intervals"
-					+ " (event_id, date, start_hour, end_hour)"
-					+ " values (?, ?, ?, ?)");
+					+ " (event_id, date, start_hour, end_hour)" + " values (?, ?, ?, ?)");
 			fPreparedStatement.setInt(1, eventId);
 			fPreparedStatement.setString(2, date);
 			fPreparedStatement.setInt(3, startHour);
 			fPreparedStatement.setInt(4, endHour);
 			fPreparedStatement.executeUpdate();
-			
+
 			return "OK";
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
-		
+
 		return "ERROR";
 	}
 
 	private int getIdFromEventCode(String eventCode) {
 
-		 try {
-			PreparedStatement preparedStatement = fConnect.prepareStatement("select event_id from feedback.ep_event where event_code=?;");
+		try {
+			PreparedStatement preparedStatement = fConnect
+					.prepareStatement("select event_id from feedback.ep_event where event_code=?;");
 			preparedStatement.setString(1, eventCode);
 			ResultSet executeQuery = preparedStatement.executeQuery();
 			while (executeQuery.next()) {
@@ -229,23 +229,22 @@ public class MySQLAccess {
 	}
 
 	/**
-	 * Inserts user into database
-	 * TODO check if username or email exists
+	 * Inserts user into database TODO check if username or email exists
 	 */
 	public String insertUser(String user, String password, String email, String salt) {
 		try {
 			fPreparedStatement = fConnect.prepareStatement("insert into  feedback.epuser values (?, ?, ?, ?)");
-			fPreparedStatement.setString(1, user);							// Name
-			fPreparedStatement.setString(2, password);						// Encrypted password
-			fPreparedStatement.setString(3, email);							// E-mail
-			fPreparedStatement.setString(4, salt);							// Salt
+			fPreparedStatement.setString(1, user); // Name
+			fPreparedStatement.setString(2, password); // Encrypted password
+			fPreparedStatement.setString(3, email); // E-mail
+			fPreparedStatement.setString(4, salt); // Salt
 			fPreparedStatement.executeUpdate();
-			
+
 			return "OK";
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
-		
+
 		return "ERROR";
 	}
 
@@ -272,10 +271,10 @@ public class MySQLAccess {
 			String password = resultSet.getString("password");
 			String email = resultSet.getString("email");
 			String salt = resultSet.getString("salt");
-//			System.out.println("User: " + user);
-//			System.out.println("Password: " + password);
-//			System.out.println("Email: " + email);
-//			System.out.println("Salt: " + salt);
+			// System.out.println("User: " + user);
+			// System.out.println("Password: " + password);
+			// System.out.println("Email: " + email);
+			// System.out.println("Salt: " + salt);
 		}
 	}
 
@@ -296,5 +295,85 @@ public class MySQLAccess {
 		} catch (Exception e) {
 
 		}
+	}
+
+	public String getEventIntervals(String eventCode) {
+		int eventId = getIdFromEventCode(eventCode);
+		ResultSet resultSet;
+		String command = "select * from feedback.ep_greedy_intervals " + "where event_id=" + eventId;
+		try {
+			Statement statement = fConnect.createStatement();
+			resultSet = statement.executeQuery(command);
+			JSONObject result = new JSONObject();
+			int i = 1;
+			while (resultSet.next()) {
+				JSONObject interval = new JSONObject();
+
+				String date = resultSet.getString("date");
+				interval.put(Constants.DATE_KEYWORD, date);
+
+				int interval_id = resultSet.getInt("interval_id");
+				interval.put(Constants.INTERVAL_ID_KEYWORD, interval_id);
+
+				int startHour = resultSet.getInt("start_hour");
+				interval.put(Constants.START_HOUR_KEYWORD, startHour);
+
+				int endHour = resultSet.getInt("end_hour");
+				interval.put(Constants.END_HOUR_KEYWORD, endHour);
+
+				result.put(Constants.INTERVAL_KEYWORD + i++, interval);
+			}
+			return result.toJSONString();
+		} catch (SQLException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+
+		return "";
+	}
+
+	public String getEventForCode(String eventCode) {
+		String command;
+		ResultSet resultSet;
+		Statement statement;
+		try {
+			statement = fConnect.createStatement();
+			command = "select * from feedback.ep_event " + "where event_code=" + "\"" + eventCode + "\"";
+			resultSet = statement.executeQuery(command);
+			JSONObject result = new JSONObject();
+
+			while (resultSet.next()) {
+				String name = resultSet.getString("event_name");
+				result.put(Constants.EVENT_NAME_KEYWORD, name);
+	
+				int type = resultSet.getInt("is_greedy");
+				result.put(Constants.GREEDY_KEYWORD, type);
+	
+				java.sql.Date startDate = resultSet.getDate("start_date");
+				result.put(Constants.MIN_START_DATE_KEYWORD, Utils.getDateString(startDate));
+	
+				java.sql.Date endDate = resultSet.getDate("end_date");
+				result.put(Constants.MAX_END_DATE_KEYWORD, Utils.getDateString(endDate));
+	
+				int startHour = resultSet.getInt("start_hour");
+				result.put(Constants.START_HOUR_KEYWORD, startHour);
+	
+				int endHour = resultSet.getInt("end_hour");
+				result.put(Constants.END_HOUR_KEYWORD, endHour);
+	
+				int duration = resultSet.getInt("duration");
+				result.put(Constants.DURATION_KEYWORD, duration);
+	
+				result.put(Constants.EVENT_CODE_KEYWORD, eventCode);
+
+				return result.toJSONString();
+			}
+
+		} catch (SQLException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		
+		return null;
 	}
 }

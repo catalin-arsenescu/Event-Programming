@@ -5,15 +5,9 @@ import java.io.DataOutputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.Socket;
-import java.net.UnknownHostException;
 import java.nio.ByteBuffer;
 import java.security.SecureRandom;
-import java.text.SimpleDateFormat;
 import java.util.Base64;
-import java.util.Date;
-import java.util.GregorianCalendar;
-
-import javax.crypto.SecretKeyFactory;
 
 import org.eclipse.swt.widgets.DateTime;
 import org.json.simple.JSONObject;
@@ -21,6 +15,7 @@ import org.json.simple.parser.JSONParser;
 import org.json.simple.parser.ParseException;
 
 import com.eventprogramming.constants.Constants;
+import com.eventprogramming.event.Event;
 import com.eventprogramming.utils.Utils;
 
 public class ClientConnection {
@@ -213,6 +208,67 @@ public class ClientConnection {
 			String response = inFromServer.readLine();
 			clientSocket.close();
 			System.out.println("FROM SERVER: " + response);
+			return response;
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+		
+		return "ERROR";
+	}
+
+	public void getEventIntervals(Event selectedEvent) {
+		int port = getPort(Constants.EVENT_INTERVALS_SERVICE);
+		if (port < 0) {
+			fClientGUI.reportError(Constants.SERVER_OFFLINE_ERROR);
+			return;
+		}
+		
+		JSONObject json = new JSONObject();
+		json.put(Constants.EVENT_CODE_KEYWORD, selectedEvent.getEventCode());
+		String message = json.toJSONString() + '\n';
+		System.out.println("SENDING" + message);
+		
+		Socket clientSocket;
+		try {
+			clientSocket = new Socket("localhost", port);
+			DataOutputStream outToServer = new DataOutputStream(clientSocket.getOutputStream());
+			BufferedReader inFromServer = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
+			outToServer.writeBytes(message);
+			String response = inFromServer.readLine();
+			clientSocket.close();
+			System.out.println("FROM SERVER: " + response);
+			if ("ERROR".equals(response)) {
+				return;
+			} else {
+				selectedEvent.parseAndSetIntervals(response);
+			}
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+		
+		return;
+	}
+
+	public String getEventForCode(String eventCode) {
+		int port = getPort(Constants.GET_EVENTS_SERVICE);
+		if (port < 0) {
+			fClientGUI.reportError(Constants.SERVER_OFFLINE_ERROR);
+			return "ERROR";
+		}
+		
+		JSONObject json = new JSONObject();
+		json.put(Constants.EVENT_CODE_KEYWORD, eventCode);
+		String message = json.toJSONString() + '\n';
+		System.out.println("SENDING" + message);
+		
+		Socket clientSocket;
+		try {
+			clientSocket = new Socket("localhost", port);
+			DataOutputStream outToServer = new DataOutputStream(clientSocket.getOutputStream());
+			BufferedReader inFromServer = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
+			outToServer.writeBytes(message);
+			String response = inFromServer.readLine();
+			clientSocket.close();
 			return response;
 		} catch (IOException e) {
 			e.printStackTrace();

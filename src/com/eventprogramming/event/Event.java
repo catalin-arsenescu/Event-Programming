@@ -1,6 +1,16 @@
 package com.eventprogramming.event;
 
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Date;
+import java.util.List;
+
+import org.json.simple.JSONObject;
+import org.json.simple.parser.JSONParser;
+import org.json.simple.parser.ParseException;
+
+import com.eventprogramming.constants.Constants;
+import com.eventprogramming.utils.Utils;
 
 public class Event {
 
@@ -13,6 +23,7 @@ public class Event {
 	private int endHour;
 	private int duration;
 	private String eventCode;
+	private List<EventInterval> fEventIntervals;
 
 	public Event(String name, String username, int type, Date minStartDate,
 				Date maxEndDate, int startHour, int endHour, int duration, String eventCode) {
@@ -61,5 +72,35 @@ public class Event {
 
 	public int getDuration() {
 		return duration;
+	}
+
+	public void setIntervals(List<EventInterval> intervals) {
+		fEventIntervals = new ArrayList<>(intervals);
+	}
+	
+	public List<EventInterval> getIntervals() {
+		return fEventIntervals;
+	}
+
+	public void parseAndSetIntervals(String response) {
+		fEventIntervals = new ArrayList<>();
+		JSONObject json;
+		JSONObject interval;
+		try {
+			json = (JSONObject) new JSONParser().parse(response);
+			int i = 1;
+			while ((interval = (JSONObject) json.get(Constants.INTERVAL_KEYWORD + i++)) != null) {
+				int intervalId 		= ((Long) interval.get(Constants.INTERVAL_ID_KEYWORD)).intValue();
+				String startDate	= (String) interval.get(Constants.DATE_KEYWORD);
+				int startHour		= ((Long) interval.get(Constants.START_HOUR_KEYWORD)).intValue();
+				int endHour	 		= ((Long) interval.get(Constants.END_HOUR_KEYWORD)).intValue();
+				
+				fEventIntervals.add(new EventInterval(Utils.getDateFromString(startDate), startHour, endHour, intervalId));
+			}
+			
+		} catch (ParseException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
 	}
 }

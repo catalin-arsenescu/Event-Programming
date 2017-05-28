@@ -118,7 +118,9 @@ public class EventAdminPageMediator extends AbstractPageMediator {
 		lastSelectedItemIndex = combo.getSelectionIndex();
 
 		EventAdminPageComposite pageComposite = (EventAdminPageComposite) getControl("page-composite");
-		pageComposite.buildTabComposites(tabFolder, getSelectedEvent());
+		Event selectedEvent = getSelectedEvent();
+		fClientConnection.getEventIntervals(selectedEvent);
+		pageComposite.buildTabComposites(tabFolder, selectedEvent);
 	}
 
 	private Event getSelectedEvent() {

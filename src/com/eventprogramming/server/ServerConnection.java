@@ -25,6 +25,8 @@ public class ServerConnection {
 										+ " \"create-user\" : 6790,"
 										+ " \"login\" : 6791,"
 										+ " \"create-event-interval\" : 6793,"
+										+ " \"event-intervals\" : 6794,"
+										+ " \"get-events\" : 6795,"
 										+ " \"create-event\" : 6792}" + '\n';
 		private ServerSocket welcomeSocket;
 		
@@ -265,12 +267,104 @@ public class ServerConnection {
 		}
 	};
 	
+	private static final Thread fEventIntervalsThread = new Thread("event-intervals") {
+		
+		private final MySQLAccess fSQLAccess = new MySQLAccess();
+		private ServerSocket serverSocket;
+		
+		@Override
+		public void run() {
+			String clientSentence;
+			try {					
+				serverSocket = new ServerSocket(6794);
+				while (true) {
+					Socket connectionSocket = serverSocket.accept();
+					BufferedReader inFromClient = new BufferedReader(
+							new InputStreamReader(connectionSocket.getInputStream()));
+					DataOutputStream outToClient = new DataOutputStream(connectionSocket.getOutputStream());
+					clientSentence = inFromClient.readLine();
+					System.out.println("Received: " + clientSentence);
+					String response = getEventIntervals(clientSentence) + '\n';
+					outToClient.writeBytes(response);
+				}
+			} catch (IOException e) {
+				e.printStackTrace();
+			} finally {
+				try {
+					serverSocket.close();
+				} catch (IOException e) {
+					e.printStackTrace();
+				}
+			}
+		}
+		
+		private String getEventIntervals(String clientSentence) {
+			try {
+				JSONObject json = (JSONObject) new JSONParser().parse(clientSentence);
+				String eventCode = (String) json.get(Constants.EVENT_CODE_KEYWORD);
+				
+				return fSQLAccess.getEventIntervals(eventCode);
+			} catch (ParseException e) {
+				e.printStackTrace();
+			}
+			
+			return "ERROR";
+		};
+		
+	};
+	
+	private static final Thread fGetEventsThread = new Thread("get-events") {
+		
+		private final MySQLAccess fSQLAccess = new MySQLAccess();
+		private ServerSocket serverSocket;
+		
+		@Override
+		public void run() {
+			String clientSentence;
+			try {					
+				serverSocket = new ServerSocket(6795);
+				while (true) {
+					Socket connectionSocket = serverSocket.accept();
+					BufferedReader inFromClient = new BufferedReader(
+							new InputStreamReader(connectionSocket.getInputStream()));
+					DataOutputStream outToClient = new DataOutputStream(connectionSocket.getOutputStream());
+					clientSentence = inFromClient.readLine();
+					String response = getEventForCode(clientSentence) + '\n';
+					outToClient.writeBytes(response);
+				}
+			} catch (IOException e) {
+				e.printStackTrace();
+			} finally {
+				try {
+					serverSocket.close();
+				} catch (IOException e) {
+					e.printStackTrace();
+				}
+			}
+		}
+
+		private String getEventForCode(String clientSentence) {
+			try {
+				JSONObject json = (JSONObject) new JSONParser().parse(clientSentence);
+				String eventCode = (String) json.get(Constants.EVENT_CODE_KEYWORD);
+				
+				return fSQLAccess.getEventForCode(eventCode);
+			} catch (ParseException e) {
+				e.printStackTrace();
+			}
+			
+			return "ERROR";
+		};
+	};
+	
 	public static void main(String[] args) {
 		fHelloThread.start();
 		fCreateUserThread.start();
 		fLoginThread.start();
 		fCreateEventThread.start();
 		fCreateEventIntervalThread.start();
+		fEventIntervalsThread.start();
+		fGetEventsThread.start();
 	}
 	
 }

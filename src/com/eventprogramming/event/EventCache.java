@@ -24,8 +24,9 @@ public class EventCache {
 		eventCache.add(e);
 	}
 	
-	public String[] toNameArray() {
+	public String[] toNameArray(String username) {
 		List<String> collect = eventCache.stream().
+				filter(e -> e.getUsername().equals(username)).
 				map(e -> e.getName()).
 				collect(Collectors.toList());
 		
@@ -40,23 +41,28 @@ public class EventCache {
 			json = (JSONObject) new JSONParser().parse(jsonString);
 			int i = 1;
 			while ((event = (JSONObject) json.get(Constants.EVENT_KEYWORD + i++)) != null) {
-				String eventName	= (String) event.get(Constants.EVENT_NAME_KEYWORD);
-				int isGreedy 		= ((Long) event.get(Constants.GREEDY_KEYWORD)).intValue();
-				String startDate	= (String) event.get(Constants.MIN_START_DATE_KEYWORD);
-				String endDate		= (String) event.get(Constants.MAX_END_DATE_KEYWORD);
-				int startHour		= ((Long) event.get(Constants.START_HOUR_KEYWORD)).intValue();
-				int endHour	 		= ((Long) event.get(Constants.END_HOUR_KEYWORD)).intValue();
-				int duration     	= ((Long) event.get(Constants.DURATION_KEYWORD)).intValue();
-				String eventCode	= (String) event.get(Constants.EVENT_CODE_KEYWORD);
-				
-				addEvent(new Event(eventName, username, isGreedy, Utils.getDateFromString(startDate),
-								Utils.getDateFromString(endDate), startHour, endHour, duration, eventCode));
+				addEvent(parseEvent(event));
 			}
 			
 		} catch (ParseException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
+	}
+
+	public Event parseEvent(JSONObject event) {
+		String eventName	= (String) event.get(Constants.EVENT_NAME_KEYWORD);
+		int isGreedy 		= ((Long) event.get(Constants.GREEDY_KEYWORD)).intValue();
+		String startDate	= (String) event.get(Constants.MIN_START_DATE_KEYWORD);
+		String endDate		= (String) event.get(Constants.MAX_END_DATE_KEYWORD);
+		int startHour		= ((Long) event.get(Constants.START_HOUR_KEYWORD)).intValue();
+		int endHour	 		= ((Long) event.get(Constants.END_HOUR_KEYWORD)).intValue();
+		int duration     	= ((Long) event.get(Constants.DURATION_KEYWORD)).intValue();
+		String eventCode	= (String) event.get(Constants.EVENT_CODE_KEYWORD);
+		
+		Event e = new Event(eventName, username, isGreedy, Utils.getDateFromString(startDate),
+						Utils.getDateFromString(endDate), startHour, endHour, duration, eventCode);
+		return e;
 	}
 
 	public void setUsername(String sessionUsername) {
@@ -66,5 +72,18 @@ public class EventCache {
 	public Event getByName(String eventName) {
 		List<Event> collected = eventCache.stream().filter(e -> e.getName().equals(eventName)).collect(Collectors.toList());
 		return collected.size() > 0 ? collected.get(0) : null;
+	}
+	
+	public void refreshCache(String jsonResponse) {
+		eventCache = new ArrayList<>();
+		addEvents(jsonResponse);
+	}
+	
+	public boolean validateEventCode(String eventCode) {
+		for (Event event : eventCache)
+			if (event.getEventCode().equals(eventCode))
+				return true;
+		
+		return false;
 	}
 }

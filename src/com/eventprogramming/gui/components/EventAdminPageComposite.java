@@ -1,5 +1,8 @@
 package com.eventprogramming.gui.components;
 
+import java.util.Date;
+import java.util.List;
+
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.events.SelectionEvent;
 import org.eclipse.swt.events.SelectionListener;
@@ -21,8 +24,10 @@ import org.eclipse.swt.widgets.TableItem;
 import org.eclipse.swt.widgets.Text;
 
 import com.eventprogramming.event.Event;
+import com.eventprogramming.event.EventInterval;
 import com.eventprogramming.gui.logic.DefaultSelectionListener;
 import com.eventprogramming.gui.logic.PageMediator;
+import com.eventprogramming.utils.Utils;
 
 public class EventAdminPageComposite extends Composite {
 
@@ -113,22 +118,15 @@ public class EventAdminPageComposite extends Composite {
 		Table table = new Table (mainGroup, SWT.MULTI | SWT.BORDER | SWT.FULL_SELECTION | SWT.V_SCROLL);
 		table.setLinesVisible(true);
 		table.setHeaderVisible(true);
-		GridData data = new GridData(SWT.FILL, SWT.FILL, true, true);
+		GridData data = new GridData(SWT.FILL, SWT.TOP, true, false, 2, 1);
+		data.heightHint = 100;
 		table.setLayoutData(data);
-		String[] titles = {"Date", "Starting hour", "YES Votes", "NO Votes", "IFNEEDBE Votes"};
+		String[] titles = {"Date", "Starting hour", "Ending hour", "YES Votes", "NO Votes", "IFNEEDBE Votes"};
 		for (int i=0; i<titles.length; i++) {
 			TableColumn column = new TableColumn (table, SWT.NONE);
 			column.setText(titles[i]);
 		}
-		int count = 1;
-		for (int i=0; i<count; i++) {
-			TableItem item = new TableItem (table, SWT.NONE);
-			item.setText (0, "WIP");
-			item.setText (1, "WIP");
-			item.setText (2, "WIP");
-			item.setText (3, "WIP");
-			item.setText (4, "WIP");
-		}
+		buildTableItems(table, event);
 		for (int i=0; i<titles.length; i++) {
 			table.getColumn(i).pack();
 		}
@@ -189,6 +187,15 @@ public class EventAdminPageComposite extends Composite {
 		return main;
 	}
 
+	private void buildTableItems(Table table, Event event) {
+		List<EventInterval> eventIntervals = event.getIntervals();
+		for (EventInterval interval : eventIntervals) {
+			TableItem item = new TableItem(table, SWT.NONE);
+			String date = interval.getDate().toString();
+			item.setText(new String[] {date, ""+interval.getStartHour(), ""+interval.getEndHour(), ""+0, ""+0, ""+0});
+		}
+	}
+
 	private Control createEventInformationTab(TabFolder tabFolder, Event event) {
 		Composite main = new Composite(tabFolder, SWT.NONE);
 		main.setLayout(new GridLayout(1, false));
@@ -205,6 +212,47 @@ public class EventAdminPageComposite extends Composite {
 		eventNameText.setTextLimit(100);
 		eventNameText.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
 		
+		Label minDateLabel = new Label(mainGroup, SWT.NONE);
+		minDateLabel.setText("Earliest date:");
+		minDateLabel.setLayoutData(new GridData(GridData.HORIZONTAL_ALIGN_CENTER));
+		DateTime minDateTime = new DateTime(mainGroup, SWT.BORDER | SWT.DATE | SWT.DROP_DOWN);
+		Date eventMinDate = event.getMinStartDate();
+		minDateTime.setDate(eventMinDate.getDay(), eventMinDate.getMonth(), eventMinDate.getDay());
+		minDateTime.setEnabled(false);
+		minDateTime.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
+		
+		Label maxDateLabel = new Label(mainGroup, SWT.NONE);
+		maxDateLabel.setText("Latest date:");
+		maxDateLabel.setLayoutData(new GridData(GridData.HORIZONTAL_ALIGN_CENTER));
+		DateTime maxDateTime = new DateTime(mainGroup, SWT.BORDER | SWT.DATE | SWT.DROP_DOWN);
+		Date eventMaxDate = event.getMaxEndDate();
+		maxDateTime.setDate(eventMaxDate.getDay(), eventMaxDate.getMonth(), eventMaxDate.getDay());
+		maxDateTime.setEnabled(false);
+		maxDateTime.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
+		
+		Label durationLabel = new Label(mainGroup, SWT.NONE);
+		durationLabel.setText("Duration:");
+		durationLabel.setLayoutData(new GridData(GridData.HORIZONTAL_ALIGN_CENTER));
+		Text durationText = new Text(mainGroup, SWT.SINGLE | SWT.BORDER);
+		durationText.setText("" + event.getDuration());
+		durationText.setTextLimit(100);
+		durationText.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
+		
+		Label startHourLabel = new Label(mainGroup, SWT.NONE);
+		startHourLabel.setText("Earliest start hour:");
+		startHourLabel.setLayoutData(new GridData(GridData.HORIZONTAL_ALIGN_CENTER));
+		Text startHourText = new Text(mainGroup, SWT.SINGLE | SWT.BORDER);
+		startHourText.setText("" + event.getStartHour());
+		startHourText.setTextLimit(100);
+		startHourText.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
+		
+		Label endHourLabel = new Label(mainGroup, SWT.NONE);
+		endHourLabel.setText("Latest ending hour:");
+		endHourLabel.setLayoutData(new GridData(GridData.HORIZONTAL_ALIGN_CENTER));
+		Text endHourText = new Text(mainGroup, SWT.SINGLE | SWT.BORDER);
+		endHourText.setText("" + event.getEndHour());
+		endHourText.setTextLimit(100);
+		endHourText.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
 		return main;
 	}
 
