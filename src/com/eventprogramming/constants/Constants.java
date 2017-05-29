@@ -36,9 +36,12 @@ public class Constants {
 	public static final String		EVENT_CODE_KEYWORD			= "event_code";
 	public static final String 		DATE_KEYWORD 				= "date";
 	public static final String 		INTERVAL_ID_KEYWORD 		= "interval-id";
+	public static final String 		VOTE_ID_KEYWORD 			= "vote-id";
+	public static final String 		VOTE_TYPE_KEYWORD 			= "vote-type";
 	
 	public static final String		EVENT_KEYWORD				= "event";
-	public static final String		INTERVAL_KEYWORD				= "interval";
+	public static final String		VOTE_KEYWORD				= "vote";
+	public static final String		INTERVAL_KEYWORD			= "interval";
 	
 	// Service names
 	public static final String		CREATE_USER_SERVICE				= "create-user";
@@ -48,6 +51,7 @@ public class Constants {
 	public static final String 		CREATE_EVENT_INTERVAL_SERVICE 	= "create-event-interval";
 	public static final String 		GENERATE_INTERVALS_SERVICE 		= "generate-event-intervals";
 	public static final String 		EVENT_INTERVALS_SERVICE 		= "event-intervals";
+	public static final String		SEND_VOTES_SERVICE				= "send-votes";
 
 	public static final String 		SERVER_OFFLINE_ERROR 	= "Server cannot be reached! Check your Internet connection and try again!";
 

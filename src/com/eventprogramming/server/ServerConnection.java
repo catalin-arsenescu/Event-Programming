@@ -8,6 +8,7 @@ import java.net.ServerSocket;
 import java.net.Socket;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.util.ArrayList;
 
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
@@ -15,6 +16,7 @@ import org.json.simple.parser.ParseException;
 
 import com.eventprogramming.constants.Constants;
 import com.eventprogramming.database.MySQLAccess;
+import com.eventprogramming.event.EventInterval;
 import com.eventprogramming.utils.Utils;
 
 public class ServerConnection {
@@ -27,6 +29,7 @@ public class ServerConnection {
 										+ " \"create-event-interval\" : 6793,"
 										+ " \"event-intervals\" : 6794,"
 										+ " \"get-events\" : 6795,"
+										+ " \"send-votes\" : 6796,"
 										+ " \"create-event\" : 6792}" + '\n';
 		private ServerSocket welcomeSocket;
 		
@@ -303,7 +306,7 @@ public class ServerConnection {
 				JSONObject json = (JSONObject) new JSONParser().parse(clientSentence);
 				String eventCode = (String) json.get(Constants.EVENT_CODE_KEYWORD);
 				
-				return fSQLAccess.getEventIntervals(eventCode);
+				return fSQLAccess.getEventIntervals(eventCode).toString();
 			} catch (ParseException e) {
 				e.printStackTrace();
 			}
@@ -357,6 +360,74 @@ public class ServerConnection {
 		};
 	};
 	
+	private static final Thread fSendVotesThread = new Thread("send-votes") {
+
+		private final MySQLAccess fSQLAccess = new MySQLAccess();
+		private ServerSocket serverSocket;
+		
+		@Override
+		public void run() {
+			String clientSentence;
+			try {					
+				serverSocket = new ServerSocket(6796);
+				while (true) {
+					Socket connectionSocket = serverSocket.accept();
+					BufferedReader inFromClient = new BufferedReader(
+							new InputStreamReader(connectionSocket.getInputStream()));
+					DataOutputStream outToClient = new DataOutputStream(connectionSocket.getOutputStream());
+					clientSentence = inFromClient.readLine();
+					System.out.println("Received: " + clientSentence);
+					String response;
+					if (clientSentence.startsWith("GET"))
+						response = getAllVotes(clientSentence);	
+					else 
+						response = saveVotes(clientSentence) + '\n';
+					outToClient.writeBytes(response);
+				}
+			} catch (IOException e) {
+				e.printStackTrace();
+			} finally {
+				try {
+					serverSocket.close();
+				} catch (IOException e) {
+					e.printStackTrace();
+				}
+			}
+		}
+
+		private String getAllVotes(String clientSentence) {
+			String eventCode = clientSentence.substring(4);
+			return fSQLAccess.getVotesForEvent(eventCode).toString();
+		}
+		
+		private String saveVotes(String clientSentence) {
+			JSONObject json;
+			JSONObject interval;
+			try {
+				json = (JSONObject) new JSONParser().parse(clientSentence);
+				int i = 1;
+				while ((interval = (JSONObject) json.get(Constants.VOTE_KEYWORD + i++)) != null) {
+					int intervalId 		= ((Long) interval.get(Constants.INTERVAL_ID_KEYWORD)).intValue();
+					String username		= (String) interval.get(Constants.USER_KEYWORD);
+					// int voteID			= ((Long) interval.get(Constants.VOTE_ID_KEYWORD)).intValue();
+					int voteType 		= ((Long) interval.get(Constants.VOTE_TYPE_KEYWORD)).intValue();
+					
+					fSQLAccess.addVote(intervalId, username, voteType);
+					
+					// todo return status
+					return "";
+				}
+				
+			} catch (ParseException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+			
+			// todo return status
+			return "";
+		}
+	};
+	
 	public static void main(String[] args) {
 		fHelloThread.start();
 		fCreateUserThread.start();
@@ -365,6 +436,7 @@ public class ServerConnection {
 		fCreateEventIntervalThread.start();
 		fEventIntervalsThread.start();
 		fGetEventsThread.start();
+		fSendVotesThread.start();
 	}
 	
 }

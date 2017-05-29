@@ -14,6 +14,7 @@ import org.eclipse.swt.widgets.DateTime;
 import org.json.simple.JSONObject;
 
 import com.eventprogramming.constants.Constants;
+import com.eventprogramming.event.EventInterval;
 import com.eventprogramming.utils.Utils;
 
 public class MySQLAccess {
@@ -297,7 +298,56 @@ public class MySQLAccess {
 		}
 	}
 
-	public String getEventIntervals(String eventCode) {
+	public JSONObject getVotesForEvent(String eventCode) {
+		JSONObject intervals = getEventIntervals(eventCode);
+		JSONObject interval;
+		JSONObject result = new JSONObject();
+		int i = 1;
+		while ((interval = (JSONObject) intervals.get(Constants.INTERVAL_KEYWORD + i++)) != null) {
+			int intervalId = (int) interval.get(Constants.INTERVAL_ID_KEYWORD);
+			
+			result.put(Constants.INTERVAL_KEYWORD + i++, getVotesForInterval(intervalId));
+		}
+		
+		return result;
+	}
+	
+	public JSONObject getVotesForInterval(int intervalId) {
+		ResultSet resultSet;
+		String command = "select * from feedback.ep_vote " + "where interval_id=" + intervalId;
+		try {
+			Statement statement = fConnect.createStatement();
+			resultSet = statement.executeQuery(command);
+			JSONObject result = new JSONObject();
+			int i = 1;
+			while (resultSet.next()) {
+				JSONObject vote = new JSONObject();
+
+				String username = resultSet.getString("username");
+				vote.put(Constants.USER_KEYWORD, username);
+
+				int interval_id = resultSet.getInt("interval_id");
+				vote.put(Constants.INTERVAL_ID_KEYWORD, interval_id);
+
+				int voteId = resultSet.getInt("vote_id");
+				vote.put(Constants.VOTE_ID_KEYWORD, voteId);
+
+				int voteType = resultSet.getInt("vote_type");
+				vote.put(Constants.VOTE_TYPE_KEYWORD, voteType);
+
+				result.put(Constants.VOTE_KEYWORD + i++, vote);
+			}
+			
+			return result;
+		} catch (SQLException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+
+		return new JSONObject();
+	}
+	
+	public JSONObject getEventIntervals(String eventCode) {
 		int eventId = getIdFromEventCode(eventCode);
 		ResultSet resultSet;
 		String command = "select * from feedback.ep_greedy_intervals " + "where event_id=" + eventId;
@@ -323,13 +373,13 @@ public class MySQLAccess {
 
 				result.put(Constants.INTERVAL_KEYWORD + i++, interval);
 			}
-			return result.toJSONString();
+			return result;
 		} catch (SQLException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
 
-		return "";
+		return new JSONObject();
 	}
 
 	public String getEventForCode(String eventCode) {
@@ -345,25 +395,25 @@ public class MySQLAccess {
 			while (resultSet.next()) {
 				String name = resultSet.getString("event_name");
 				result.put(Constants.EVENT_NAME_KEYWORD, name);
-	
+
 				int type = resultSet.getInt("is_greedy");
 				result.put(Constants.GREEDY_KEYWORD, type);
-	
+
 				java.sql.Date startDate = resultSet.getDate("start_date");
 				result.put(Constants.MIN_START_DATE_KEYWORD, Utils.getDateString(startDate));
-	
+
 				java.sql.Date endDate = resultSet.getDate("end_date");
 				result.put(Constants.MAX_END_DATE_KEYWORD, Utils.getDateString(endDate));
-	
+
 				int startHour = resultSet.getInt("start_hour");
 				result.put(Constants.START_HOUR_KEYWORD, startHour);
-	
+
 				int endHour = resultSet.getInt("end_hour");
 				result.put(Constants.END_HOUR_KEYWORD, endHour);
-	
+
 				int duration = resultSet.getInt("duration");
 				result.put(Constants.DURATION_KEYWORD, duration);
-	
+
 				result.put(Constants.EVENT_CODE_KEYWORD, eventCode);
 
 				return result.toJSONString();
@@ -373,7 +423,25 @@ public class MySQLAccess {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
-		
+
 		return null;
+	}
+
+	public void addVote(int intervalId, String username, int voteType) {
+		String command;
+		ResultSet resultSet;
+		PreparedStatement statement;
+		try {
+			statement = fConnect.prepareStatement("insert into feedback.ep_vote(interval_id, username, vote_type) values(?, ?, ?)");
+			statement.setInt(1, intervalId);
+			statement.setString(2, username);
+			statement.setInt(3, voteType);
+			statement.executeUpdate();
+
+		} catch (SQLException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+
 	}
 }

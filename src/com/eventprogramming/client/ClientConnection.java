@@ -8,6 +8,8 @@ import java.net.Socket;
 import java.nio.ByteBuffer;
 import java.security.SecureRandom;
 import java.util.Base64;
+import java.util.Collections;
+import java.util.List;
 
 import org.eclipse.swt.widgets.DateTime;
 import org.json.simple.JSONObject;
@@ -16,6 +18,8 @@ import org.json.simple.parser.ParseException;
 
 import com.eventprogramming.constants.Constants;
 import com.eventprogramming.event.Event;
+import com.eventprogramming.event.EventInterval;
+import com.eventprogramming.event.IntervalVote;
 import com.eventprogramming.utils.Utils;
 
 public class ClientConnection {
@@ -216,6 +220,78 @@ public class ClientConnection {
 		return "ERROR";
 	}
 
+	public void sendEventVotes(List<IntervalVote> votes) {
+		int port = getPort(Constants.SEND_VOTES_SERVICE);
+		if (port < 0) {
+			fClientGUI.reportError(Constants.SERVER_OFFLINE_ERROR);
+			return;
+		}
+		
+		JSONObject json = new JSONObject();
+		int i = 1;
+		for (IntervalVote interval : votes) {
+			JSONObject voteJson = new JSONObject();
+
+			String username = interval.getUsername();
+			voteJson.put(Constants.USER_KEYWORD, username);
+
+			int interval_id = interval.getIntervalID();
+			voteJson.put(Constants.INTERVAL_ID_KEYWORD, interval_id);
+
+			int vote_id = -1;
+			voteJson.put(Constants.VOTE_ID_KEYWORD, vote_id);
+
+			int voteType = interval.getTypeInt();
+			voteJson.put(Constants.VOTE_TYPE_KEYWORD, voteType);
+
+			json.put(Constants.VOTE_KEYWORD + i++, voteJson);
+		}
+		
+		String message = json.toJSONString() + '\n';
+		System.out.println("SENDING" + message);
+		
+		Socket clientSocket;
+		try {
+			clientSocket = new Socket("localhost", port);
+			DataOutputStream outToServer = new DataOutputStream(clientSocket.getOutputStream());
+			BufferedReader inFromServer = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
+			outToServer.writeBytes(message);
+			String response = inFromServer.readLine();
+			clientSocket.close();
+			// TODO HANDLE RESPONSE
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+		
+		return;
+	}
+	
+	public List<IntervalVote> getVotesForEvent(Event event) {
+		int port = getPort(Constants.SEND_VOTES_SERVICE);
+		if (port < 0) {
+			fClientGUI.reportError(Constants.SERVER_OFFLINE_ERROR);
+			return Collections.emptyList();
+		}
+		
+		String message = "GET_" + event.getEventCode() + '\n';
+		System.out.println("SENDING" + message);
+		
+		Socket clientSocket;
+		try {
+			clientSocket = new Socket("localhost", port);
+			DataOutputStream outToServer = new DataOutputStream(clientSocket.getOutputStream());
+			BufferedReader inFromServer = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
+			outToServer.writeBytes(message);
+			String response = inFromServer.readLine();
+			clientSocket.close();
+			// TODO HANDLE RESPONSE
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+		
+		return null;
+	}
+	
 	public void getEventIntervals(Event selectedEvent) {
 		int port = getPort(Constants.EVENT_INTERVALS_SERVICE);
 		if (port < 0) {

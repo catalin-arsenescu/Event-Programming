@@ -10,18 +10,16 @@ import org.eclipse.swt.widgets.Button;
 import org.eclipse.swt.widgets.Composite;
 
 import com.eventprogramming.event.EventInterval;
+import com.eventprogramming.event.IntervalVote;
+import com.eventprogramming.event.IntervalVote.VoteType;
 
 public class EventIntervalVoteButton extends Button {
 
-	public enum EventType {
-		YES, NO, IFB
-	}
-	
 	private EventInterval fInterval;
-	private EventType fType;
+	private VoteType fType;
 	private List<EventIntervalVoteButton> others;
 
-	public EventIntervalVoteButton(Composite parent, EventInterval interval, EventType type) {
+	public EventIntervalVoteButton(Composite parent, EventInterval interval, VoteType type) {
 		super(parent, SWT.CHECK);
 		fInterval = interval;
 		fType = type;
@@ -31,6 +29,9 @@ public class EventIntervalVoteButton extends Button {
 			public void widgetSelected(SelectionEvent e) {
 				for (EventIntervalVoteButton b : others)
 					b.setSelection(false);
+				
+				// Save vote in the associated event interval
+				fInterval.vote(getType());
 			}
 
 			@Override
@@ -41,7 +42,7 @@ public class EventIntervalVoteButton extends Button {
 		});
 	}
 
-	public EventType getType() {
+	public IntervalVote.VoteType getType() {
 		return fType;
 	}
 	

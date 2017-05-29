@@ -23,10 +23,12 @@ import org.eclipse.swt.widgets.Text;
 
 import com.eventprogramming.event.Event;
 import com.eventprogramming.event.EventInterval;
+import com.eventprogramming.event.IntervalVote;
+import com.eventprogramming.event.IntervalVote.VoteType;
 import com.eventprogramming.gui.logic.DefaultSelectionListener;
 import com.eventprogramming.gui.logic.PageMediator;
+import com.eventprogramming.gui.logic.JoinEventPageMediator;
 import com.eventprogramming.widgets.EventIntervalVoteButton;
-import com.eventprogramming.widgets.EventIntervalVoteButton.EventType;
 
 public class JoinEventPageComposite extends Composite {
 
@@ -42,6 +44,7 @@ public class JoinEventPageComposite extends Composite {
 
 		fEvent = event;
 		fMediator = mediator;
+		((JoinEventPageMediator) fMediator).setEvent(event);
 		buildComposite();
 	}
 
@@ -70,7 +73,7 @@ public class JoinEventPageComposite extends Composite {
 
 			item = new TabItem(tabFolder, SWT.NONE);
 			item.setText(VOTE_INFORMATION);
-			item.setControl(createMainPollTab(tabFolder, event));
+			item.setControl(createVoteInformationTab(tabFolder, event));
 
 		} else {
 			TabItem[] items = tabFolder.getItems();
@@ -119,7 +122,7 @@ public class JoinEventPageComposite extends Composite {
 		GridData layoutData = new GridData(GridData.HORIZONTAL_ALIGN_CENTER);
 		layoutData.widthHint = 60;
 		saveButton.setLayoutData(layoutData);
-		fMediator.registerControl(saveButton, "addButton");
+		fMediator.registerControl(saveButton, "saveButton");
 		saveButton.addSelectionListener(new DefaultSelectionListener(fMediator, saveButton));
 
 		return main;
@@ -144,17 +147,17 @@ public class JoinEventPageComposite extends Composite {
 			item.setText(2, "" + interval.getEndHour());
 			
 			TableEditor editor;
-			EventIntervalVoteButton yesButton = new EventIntervalVoteButton(table, interval, EventType.YES);
+			EventIntervalVoteButton yesButton = new EventIntervalVoteButton(table, interval, IntervalVote.VoteType.YES);
 			editor = new TableEditor(table);
 			editor.grabHorizontal = true;
 			editor.setEditor(yesButton, items[i], 3);
 			
-			EventIntervalVoteButton noButton = new EventIntervalVoteButton(table, interval, EventType.NO);
+			EventIntervalVoteButton noButton = new EventIntervalVoteButton(table, interval, IntervalVote.VoteType.NO);
 			editor = new TableEditor(table);
 			editor.grabHorizontal = true;
 			editor.setEditor(noButton, items[i], 4);
 			
-			EventIntervalVoteButton ifbButton = new EventIntervalVoteButton(table, interval, EventType.IFB);
+			EventIntervalVoteButton ifbButton = new EventIntervalVoteButton(table, interval, IntervalVote.VoteType.IFB);
 			editor = new TableEditor(table);
 			editor.grabHorizontal = true;
 			editor.setEditor(ifbButton, items[i], 5);
