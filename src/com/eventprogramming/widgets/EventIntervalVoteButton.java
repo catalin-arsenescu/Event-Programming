@@ -31,7 +31,7 @@ public class EventIntervalVoteButton extends Button {
 					b.setSelection(false);
 				
 				// Save vote in the associated event interval
-				fInterval.vote(getType());
+				fInterval.vote(getSelection() ? getType() : null);
 			}
 
 			@Override

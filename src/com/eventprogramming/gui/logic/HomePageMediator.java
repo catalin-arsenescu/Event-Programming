@@ -22,6 +22,7 @@ import com.eventprogramming.utils.Utils;
 
 public class HomePageMediator extends AbstractPageMediator {
 
+	private static final String DEFAULT_EVENT_CODE = "2100465816";
 	private static String[] identifiers = { "createEventButton", "joinEventButton", "eventAdminButton" };
 
 	public HomePageMediator(ClientGUI clientGUI, ClientConnection clientConnection) {
@@ -46,7 +47,7 @@ public class HomePageMediator extends AbstractPageMediator {
 	}
 	
 	public void joinEvent() {
-		InputDialog dlg = new InputDialog(fClientGUI.getShell(), "Join an event", "Enter the event code:", "689141376", new IInputValidator() {
+		InputDialog dlg = new InputDialog(fClientGUI.getShell(), "Join an event", "Enter the event code:", DEFAULT_EVENT_CODE, new IInputValidator() {
 
 			@Override
 			public String isValid(String arg0) {

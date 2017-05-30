@@ -3,7 +3,16 @@ package com.eventprogramming.event;
 public class IntervalVote {
 
 	public enum VoteType {
-		YES, NO, IFB
+		YES, NO, IFB;
+		
+		public static VoteType getFromInt(int voteType) {
+			if (voteType == 0)
+				return YES;
+			else if (voteType == 1)
+				return NO;
+			else
+				return IFB;
+		}
 	}
 	
 	private int intervalID;

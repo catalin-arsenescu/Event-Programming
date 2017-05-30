@@ -14,6 +14,7 @@ import com.eventprogramming.gui.logic.PageMediator;
 
 public class WelcomePageComposite extends Composite {
 
+	private static final String USERPASS = "catalin";
 	private PageMediator fMediator;
 	
 	public WelcomePageComposite(Composite parent, int style, PageMediator mediator) {
@@ -35,7 +36,7 @@ public class WelcomePageComposite extends Composite {
 		userLabel.setLayoutData(new GridData(GridData.HORIZONTAL_ALIGN_CENTER));
 
 		Text userText = new Text(mainGroup, SWT.SINGLE | SWT.BORDER);
-		userText.setText("admin");
+		userText.setText(USERPASS);
 		userText.setTextLimit(100);
 		userText.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
 		fMediator.registerControl(userText, "userText");
@@ -45,7 +46,7 @@ public class WelcomePageComposite extends Composite {
 		passLabel.setLayoutData(new GridData(GridData.HORIZONTAL_ALIGN_CENTER));
 
 		Text passText = new Text(mainGroup, SWT.SINGLE | SWT.BORDER);
-		passText.setText("admin");
+		passText.setText(USERPASS);
 		passText.setTextLimit(100);
 		passText.setEchoChar('*');
 		passText.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));

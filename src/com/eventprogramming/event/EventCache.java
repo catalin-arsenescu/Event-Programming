@@ -59,8 +59,9 @@ public class EventCache {
 		int endHour	 		= ((Long) event.get(Constants.END_HOUR_KEYWORD)).intValue();
 		int duration     	= ((Long) event.get(Constants.DURATION_KEYWORD)).intValue();
 		String eventCode	= (String) event.get(Constants.EVENT_CODE_KEYWORD);
+		String initiator 	= (String) event.get(Constants.USER_KEYWORD);
 		
-		Event e = new Event(eventName, username, isGreedy, Utils.getDateFromString(startDate),
+		Event e = new Event(eventName, initiator, isGreedy, Utils.getDateFromString(startDate),
 						Utils.getDateFromString(endDate), startHour, endHour, duration, eventCode);
 		return e;
 	}
@@ -72,11 +73,6 @@ public class EventCache {
 	public Event getByName(String eventName) {
 		List<Event> collected = eventCache.stream().filter(e -> e.getName().equals(eventName)).collect(Collectors.toList());
 		return collected.size() > 0 ? collected.get(0) : null;
-	}
-	
-	public void refreshCache(String jsonResponse) {
-		eventCache = new ArrayList<>();
-		addEvents(jsonResponse);
 	}
 	
 	public boolean validateEventCode(String eventCode) {

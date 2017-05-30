@@ -172,7 +172,8 @@ public class ClientGUI {
 			height = clientArea.height * 2 / 3;
 			x = width / 6;
 			y = height / 6;
-			return new Rectangle(x, y, width, height);
+			return new Rectangle(0, 0, clientArea.width, clientArea.height);
+//			return new Rectangle(x, y, width, height);
 		}
 
 		return clientArea;

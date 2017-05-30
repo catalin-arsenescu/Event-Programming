@@ -284,7 +284,8 @@ public class ClientConnection {
 			outToServer.writeBytes(message);
 			String response = inFromServer.readLine();
 			clientSocket.close();
-			// TODO HANDLE RESPONSE
+			System.out.println("FROM SERVER: " + response);
+			event.addVotes(response);
 		} catch (IOException e) {
 			e.printStackTrace();
 		}

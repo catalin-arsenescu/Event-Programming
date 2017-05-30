@@ -379,7 +379,7 @@ public class ServerConnection {
 					System.out.println("Received: " + clientSentence);
 					String response;
 					if (clientSentence.startsWith("GET"))
-						response = getAllVotes(clientSentence);	
+						response = getAllVotes(clientSentence) + '\n';	
 					else 
 						response = saveVotes(clientSentence) + '\n';
 					outToClient.writeBytes(response);
@@ -411,12 +411,14 @@ public class ServerConnection {
 					String username		= (String) interval.get(Constants.USER_KEYWORD);
 					// int voteID			= ((Long) interval.get(Constants.VOTE_ID_KEYWORD)).intValue();
 					int voteType 		= ((Long) interval.get(Constants.VOTE_TYPE_KEYWORD)).intValue();
+					int eventId = fSQLAccess.getEventIdFromIntervalId(intervalId);
 					
-					fSQLAccess.addVote(intervalId, username, voteType);
+					fSQLAccess.addVote(eventId, intervalId, username, voteType);
 					
-					// todo return status
-					return "";
 				}
+				
+				// todo return status
+				return "";
 				
 			} catch (ParseException e) {
 				// TODO Auto-generated catch block

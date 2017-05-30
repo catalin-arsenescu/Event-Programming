@@ -132,6 +132,9 @@ public class MySQLAccess {
 			String name = resultSet.getString("event_name");
 			event.put(Constants.EVENT_NAME_KEYWORD, name);
 
+			String initiator = resultSet.getString("initiator");
+			event.put(Constants.USER_KEYWORD, initiator);
+			
 			int type = resultSet.getInt("is_greedy");
 			event.put(Constants.GREEDY_KEYWORD, type);
 
@@ -228,6 +231,23 @@ public class MySQLAccess {
 		}
 		return -1;
 	}
+	
+	public int getEventIdFromIntervalId(int intervalId) {
+
+		try {
+			PreparedStatement preparedStatement = fConnect
+					.prepareStatement("select event_id from feedback.ep_greedy_intervals where interval_id=?;");
+			preparedStatement.setInt(1, intervalId);
+			ResultSet executeQuery = preparedStatement.executeQuery();
+			while (executeQuery.next()) {
+				return executeQuery.getInt("event_id");
+			}
+		} catch (SQLException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		return -1;
+	}
 
 	/**
 	 * Inserts user into database TODO check if username or email exists
@@ -306,7 +326,7 @@ public class MySQLAccess {
 		while ((interval = (JSONObject) intervals.get(Constants.INTERVAL_KEYWORD + i++)) != null) {
 			int intervalId = (int) interval.get(Constants.INTERVAL_ID_KEYWORD);
 			
-			result.put(Constants.INTERVAL_KEYWORD + i++, getVotesForInterval(intervalId));
+			result.put(Constants.INTERVAL_KEYWORD + (i-1), getVotesForInterval(intervalId));
 		}
 		
 		return result;
@@ -427,15 +447,16 @@ public class MySQLAccess {
 		return null;
 	}
 
-	public void addVote(int intervalId, String username, int voteType) {
+	public void addVote(int eventId, int intervalId, String username, int voteType) {
 		String command;
 		ResultSet resultSet;
 		PreparedStatement statement;
 		try {
-			statement = fConnect.prepareStatement("insert into feedback.ep_vote(interval_id, username, vote_type) values(?, ?, ?)");
-			statement.setInt(1, intervalId);
-			statement.setString(2, username);
-			statement.setInt(3, voteType);
+			statement = fConnect.prepareStatement("insert into feedback.ep_vote(event_id, interval_id, username, vote_type) values(?, ?, ?, ?)");
+			statement.setInt(1, eventId);
+			statement.setInt(2, intervalId);
+			statement.setString(3, username);
+			statement.setInt(4, voteType);
 			statement.executeUpdate();
 
 		} catch (SQLException e) {

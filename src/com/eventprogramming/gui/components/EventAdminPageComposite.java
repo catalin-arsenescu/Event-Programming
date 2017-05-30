@@ -25,6 +25,7 @@ import org.eclipse.swt.widgets.Text;
 
 import com.eventprogramming.event.Event;
 import com.eventprogramming.event.EventInterval;
+import com.eventprogramming.event.IntervalVote.VoteType;
 import com.eventprogramming.gui.logic.DefaultSelectionListener;
 import com.eventprogramming.gui.logic.PageMediator;
 import com.eventprogramming.utils.Utils;
@@ -119,7 +120,7 @@ public class EventAdminPageComposite extends Composite {
 		table.setLinesVisible(true);
 		table.setHeaderVisible(true);
 		GridData data = new GridData(SWT.FILL, SWT.TOP, true, false, 2, 1);
-		data.heightHint = 100;
+		data.heightHint = 200;
 		table.setLayoutData(data);
 		String[] titles = {"Date", "Starting hour", "Ending hour", "YES Votes", "NO Votes", "IFNEEDBE Votes"};
 		for (int i=0; i<titles.length; i++) {
@@ -192,7 +193,10 @@ public class EventAdminPageComposite extends Composite {
 		for (EventInterval interval : eventIntervals) {
 			TableItem item = new TableItem(table, SWT.NONE);
 			String date = interval.getDate().toString();
-			item.setText(new String[] {date, ""+interval.getStartHour(), ""+interval.getEndHour(), ""+0, ""+0, ""+0});
+			item.setText(new String[] { date, ""+interval.getStartHour(), ""+interval.getEndHour(),
+										"" +  interval.getVotes(VoteType.YES),
+										"" +  interval.getVotes(VoteType.NO), 
+										"" +  interval.getVotes(VoteType.IFB) });
 		}
 	}
 

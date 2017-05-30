@@ -103,4 +103,34 @@ public class Event {
 			e.printStackTrace();
 		}
 	}
+
+	public void addVotes(String response) {
+		JSONObject json;
+		JSONObject intervalJSON;
+		try {
+			json = (JSONObject) new JSONParser().parse(response);
+			int i = 1;
+			while ((intervalJSON = (JSONObject) json.get(Constants.INTERVAL_KEYWORD + i++)) != null) {
+				int intervalId 		= ((Long) ((JSONObject) intervalJSON.get(Constants.VOTE_KEYWORD + '1')).get(Constants.INTERVAL_ID_KEYWORD)).intValue();
+				EventInterval interval = getIntervalById(intervalId);
+				if (interval == null)
+					continue;
+				
+				String voteString = intervalJSON.toJSONString();
+				interval.addVotes(voteString);
+			}
+			
+		} catch (ParseException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+	}
+
+	private EventInterval getIntervalById(int id) {
+		for (EventInterval interval : fEventIntervals)
+			if (interval.getId() == id)
+				return interval;
+						
+		return null;
+	}
 }
