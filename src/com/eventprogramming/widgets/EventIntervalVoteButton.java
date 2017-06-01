@@ -27,11 +27,15 @@ public class EventIntervalVoteButton extends Button {
 
 			@Override
 			public void widgetSelected(SelectionEvent e) {
-				for (EventIntervalVoteButton b : others)
-					b.setSelection(false);
-				
-				// Save vote in the associated event interval
-				fInterval.vote(getSelection() ? getType() : null);
+				if (getSelection()) {
+					for (EventIntervalVoteButton b : others)
+						b.setSelection(false);
+					
+					// Save vote in the associated event interval
+					fInterval.vote(getType());
+				} else {
+					setSelection(true);
+				}
 			}
 
 			@Override

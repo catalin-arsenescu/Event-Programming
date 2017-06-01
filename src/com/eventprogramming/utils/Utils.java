@@ -21,6 +21,10 @@ public class Utils {
 
 	private static final SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
 
+	public static String printDate(Date date) {
+		return sdf.format(date);
+	}
+	
 	public static String getDateString(DateTime dateTime) {
 		Date tmp = getDateFromDateTime(dateTime);
 		return sdf.format(tmp);

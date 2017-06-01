@@ -7,6 +7,7 @@ import java.util.Date;
 import java.util.HashSet;
 import java.util.Set;
 
+import org.eclipse.swt.SWT;
 import org.eclipse.swt.events.SelectionEvent;
 import org.eclipse.swt.widgets.Combo;
 import org.eclipse.swt.widgets.Control;
@@ -14,19 +15,24 @@ import org.eclipse.swt.widgets.DateTime;
 import org.eclipse.swt.widgets.Shell;
 import org.eclipse.swt.widgets.Spinner;
 import org.eclipse.swt.widgets.TabFolder;
+import org.eclipse.swt.widgets.Table;
+import org.eclipse.swt.widgets.TableItem;
 import org.eclipse.swt.widgets.Text;
 
 import com.eventprogramming.client.ClientConnection;
 import com.eventprogramming.client.ClientGUI;
 import com.eventprogramming.client.ClientGUI.STATE;
 import com.eventprogramming.event.Event;
+import com.eventprogramming.event.IntervalVote.VoteType;
 import com.eventprogramming.gui.components.EventAdminPageComposite;
 import com.eventprogramming.utils.Utils;
 
 public class EventAdminPageMediator extends AbstractPageMediator {
 
 	private static String[] identifiers = { "combo", "tabFolder", "page-composite", "dateTime",
-											"startHourSpinner", "incrementSpinner", "addButton", "generateButton" };
+											"startHourSpinner", "incrementSpinner", "addButton", 
+											"generateButton", "userPriorityText", "addPriorityButton",
+											"prioritiesList", "prioritiesTable" };
 	
 	private int lastSelectedItemIndex;
 
@@ -44,10 +50,35 @@ public class EventAdminPageMediator extends AbstractPageMediator {
 			addEvent();
 		} else if ("generateButton".equals(identifier)) {
 			generateEvents();
+		} else if ("addPriorityButton".equals(identifier)) {
+			addPriority();
 		}
 	}
 
 	
+	private void addPriority() {
+		if (!checkPriorityInput())
+			return;
+
+		String username = ((Text) getControl("userPriorityText")).getText();
+		int priority = ((org.eclipse.swt.widgets.List) getControl("prioritiesList")).getSelectionIndex() + 1;
+		String eventCode = getSelectedEvent().getEventCode();
+		
+		String errorCode = fClientConnection.addPriority(eventCode, username, priority);
+		if (!"OK".equals(errorCode))
+			return;
+		
+		insertPriorityInTable(username, priority);
+	}
+
+	private boolean checkPriorityInput() {
+		Text text = (Text) getControl("userPriorityText");
+		if (text == null || text.getText().isEmpty())
+			return false;
+		
+		return true;
+	}
+
 	private void addEvent() {
 		checkNewEventInput();
 		DateTime dateTime = (DateTime) getControl("dateTime");
@@ -61,6 +92,20 @@ public class EventAdminPageMediator extends AbstractPageMediator {
 											endHour);
 	}
 
+	private void insertPriorityInTable(String username, int priority) {
+
+		Table prioritiesTable = (Table) getControl("prioritiesTable");
+		TableItem[] items = prioritiesTable.getItems();
+		for (TableItem item : items)
+			if (username.equals(item.getText(0))) {
+				item.setText(1, "" + priority);
+				return;
+			}
+		
+		TableItem item = new TableItem(prioritiesTable, SWT.NONE);
+		item.setText(new String[] { username, "" + priority });
+	}
+	
 	private boolean checkNewEventInput() {
 		DateTime dateTime = (DateTime) getControl("dateTime");
 		Event event = getSelectedEvent();
@@ -121,6 +166,7 @@ public class EventAdminPageMediator extends AbstractPageMediator {
 		Event selectedEvent = getSelectedEvent();
 		fClientConnection.getEventIntervals(selectedEvent);
 		fClientConnection.getVotesForEvent(selectedEvent);
+		fClientConnection.getPrioritiesForEvent(selectedEvent);
 		pageComposite.buildTabComposites(tabFolder, selectedEvent);
 	}
 

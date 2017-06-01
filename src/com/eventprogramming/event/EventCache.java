@@ -82,4 +82,8 @@ public class EventCache {
 		
 		return false;
 	}
+	
+	public String toString() {
+		return eventCache.toString(); 
+	}
 }

@@ -24,12 +24,12 @@ public class EventInterval {
 	 */
 	private ArrayList<IntervalVote> fVotes;
 	
-	public EventInterval(Date date, int startHour, int endHour, int id) {
+	public EventInterval(Date date, int startHour, int endHour, int id, int existingVote) {
 		fDate = date;
 		fStartHour = startHour;
 		fEndHour = endHour;
 		this.id = id;
-		vote = null;
+		vote = VoteType.getFromInt(existingVote);
 	}
 
 	public void vote(IntervalVote.VoteType voteType) {
@@ -88,5 +88,10 @@ public class EventInterval {
 				count++;
 			
 		return count;
+	}
+	
+	@Override
+	public String toString() {
+		return "[" + id + "][" + Utils.printDate(getDate()) + "][" + vote + "]"; 
 	}
 }

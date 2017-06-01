@@ -26,30 +26,33 @@ import org.eclipse.swt.widgets.Text;
 import com.eventprogramming.event.Event;
 import com.eventprogramming.event.EventInterval;
 import com.eventprogramming.event.IntervalVote.VoteType;
+import com.eventprogramming.event.Priority;
 import com.eventprogramming.gui.logic.DefaultSelectionListener;
 import com.eventprogramming.gui.logic.PageMediator;
 import com.eventprogramming.utils.Utils;
 
-public class EventAdminPageComposite extends Composite {
+public class EventAdminPageComposite extends PageComposite {
 
 	private static final String ACTIVITY_LOG = "Activity Log";
-	private static final String VOTE_INFORMATION = "Vote Information";
+	private static final String PRIORITIES = "Priorities";
 	private static final String MANAGE_POLLS = "Manage Polls";
 	private static final String EVENT_INFORMATION = "Event Information";
-	private PageMediator fMediator;
+	private static final String[] PRIORITIES_LIST = new String[] { "1 - Rather optional participant",
+												"2 - Normal priority", 
+												"3 - Would prefer this person attends",
+												"4 - High priority",
+												"Mandatory - The event cannot take place without this person" };
 	private String[] eventNames;
 	
 	public EventAdminPageComposite(Composite parent, int style, PageMediator mediator, String[] eventNames) {
-		super(parent, style);
-		setLayout(new GridLayout(1, false));
+		super(parent, style, mediator);
 		
-		fMediator = mediator;
 		fMediator.registerControl(this, "page-composite");
 		this.eventNames = eventNames;
 		buildComposite();
 	}
 
-	private void buildComposite() {
+	protected void buildComposite() {
 		Group eventSelectGroup = new Group(this, SWT.NONE);
 		eventSelectGroup.setLayout(new GridLayout(2, true));
 		eventSelectGroup.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, true, false));
@@ -81,8 +84,8 @@ public class EventAdminPageComposite extends Composite {
 			item.setControl(createManagePollsTab(tabFolder, event));
 			
 			item = new TabItem(tabFolder, SWT.NONE);
-			item.setText(VOTE_INFORMATION);
-			item.setControl(createVotesTab(tabFolder, event));
+			item.setText(PRIORITIES);
+			item.setControl(createPrioritiesTab(tabFolder, event));
 			
 			item = new TabItem(tabFolder, SWT.NONE);
 			item.setText(ACTIVITY_LOG);
@@ -94,18 +97,80 @@ public class EventAdminPageComposite extends Composite {
 					item.setControl(createEventInformationTab(tabFolder, event));
 				if (item.getText().equals(MANAGE_POLLS))
 					item.setControl(createManagePollsTab(tabFolder, event));
-				if (item.getText().equals(VOTE_INFORMATION))
-					item.setControl(createVotesTab(tabFolder, event));
+				if (item.getText().equals(PRIORITIES))
+					item.setControl(createPrioritiesTab(tabFolder, event));
 				if (item.getText().equals(ACTIVITY_LOG))
 					item.setControl(createActivityLogTab(tabFolder, event));
 			}
 		}
 	}
 	
-	private Control createVotesTab(TabFolder tabFolder, Event event) {
-		Button button = new Button (tabFolder, SWT.PUSH);
-		button.setText ("Vote information page");
-		return button;
+	private Control createPrioritiesTab(TabFolder tabFolder, Event event) {
+		Composite main = new Composite(tabFolder, SWT.NONE);
+		main.setLayout(new GridLayout(1, false));
+
+		Group mainGroup = new Group(main, SWT.NONE);
+		mainGroup.setLayout(new GridLayout(2, true));
+		mainGroup.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, false));
+		
+		Table table = new Table (mainGroup, SWT.MULTI | SWT.BORDER | SWT.FULL_SELECTION | SWT.V_SCROLL);
+		table.setLinesVisible(true);
+		table.setHeaderVisible(true);
+		fMediator.registerControl(table, "prioritiesTable");
+		GridData data = new GridData(SWT.FILL, SWT.TOP, true, false);
+		data.heightHint = 200;
+		table.setLayoutData(data);
+		String[] titles = {"User", "Priority"};
+		for (int i=0; i<titles.length; i++) {
+			TableColumn column = new TableColumn (table, SWT.NONE);
+			column.setText(titles[i]);
+		}
+		buildPrioritesTable(table, event);
+		for (int i=0; i<titles.length; i++) {
+			table.getColumn(i).pack();
+		}
+
+		Group buttonsGroup = new Group(mainGroup, SWT.NONE);
+		buttonsGroup.setLayout(new GridLayout(1, false));
+		buttonsGroup.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, true, false));
+		
+		Group addGroup = new Group(buttonsGroup, SWT.NONE);
+		addGroup.setLayout(new GridLayout(2, false));
+		addGroup.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, true, false));
+		
+		Label dateLabel = new Label(addGroup, SWT.NONE);
+		dateLabel.setText("Username:");
+		dateLabel.setLayoutData(new GridData(GridData.HORIZONTAL_ALIGN_CENTER));
+		Text userPriorityText = new Text(addGroup, SWT.SINGLE | SWT.BORDER);
+		userPriorityText.setText("");
+		userPriorityText.setTextLimit(100);
+		userPriorityText.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
+		fMediator.registerControl(userPriorityText, "userPriorityText");
+
+		Label priorityLabel = new Label(addGroup, SWT.NONE);
+		priorityLabel.setText("Priority:");
+		priorityLabel.setLayoutData(new GridData(GridData.HORIZONTAL_ALIGN_CENTER));
+		org.eclipse.swt.widgets.List prioritiesList = new org.eclipse.swt.widgets.List(addGroup, SWT.NONE);
+		prioritiesList.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
+		prioritiesList.setItems(PRIORITIES_LIST);
+		prioritiesList.setSelection(1);
+		fMediator.registerControl(prioritiesList, "prioritiesList");
+		
+		Button addPriorityButton = new Button(buttonsGroup, SWT.PUSH);
+		addPriorityButton.setText("Add priority");
+		addPriorityButton.setLayoutData(new GridData(GridData.HORIZONTAL_ALIGN_CENTER));
+		fMediator.registerControl(addPriorityButton, "addPriorityButton");
+		addPriorityButton.addSelectionListener(new DefaultSelectionListener(fMediator, addPriorityButton));
+		
+		return main;
+	}
+
+	private void buildPrioritesTable(Table table, Event event) {
+		List<Priority> priorities = event.getPriorities();
+		for (Priority priority : priorities) {
+			TableItem item = new TableItem(table, SWT.NONE);
+			item.setText(new String[] { priority.getUsername(), "" + priority.getPriorityValue() });
+		}
 	}
 
 	private Control createManagePollsTab(TabFolder tabFolder, Event event) {
@@ -127,7 +192,7 @@ public class EventAdminPageComposite extends Composite {
 			TableColumn column = new TableColumn (table, SWT.NONE);
 			column.setText(titles[i]);
 		}
-		buildTableItems(table, event);
+		buildManagePollsTable(table, event);
 		for (int i=0; i<titles.length; i++) {
 			table.getColumn(i).pack();
 		}
@@ -188,11 +253,11 @@ public class EventAdminPageComposite extends Composite {
 		return main;
 	}
 
-	private void buildTableItems(Table table, Event event) {
+	private void buildManagePollsTable(Table table, Event event) {
 		List<EventInterval> eventIntervals = event.getIntervals();
 		for (EventInterval interval : eventIntervals) {
 			TableItem item = new TableItem(table, SWT.NONE);
-			String date = interval.getDate().toString();
+			String date = Utils.printDate(interval.getDate());
 			item.setText(new String[] { date, ""+interval.getStartHour(), ""+interval.getEndHour(),
 										"" +  interval.getVotes(VoteType.YES),
 										"" +  interval.getVotes(VoteType.NO), 

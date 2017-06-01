@@ -37,17 +37,20 @@ public class Constants {
 	public static final String 		DATE_KEYWORD 				= "date";
 	public static final String 		INTERVAL_ID_KEYWORD 		= "interval-id";
 	public static final String 		VOTE_ID_KEYWORD 			= "vote-id";
+	public static final String 		PRIORITY_VALUE_KEYWORD 		= "priority-value";
 	public static final String 		VOTE_TYPE_KEYWORD 			= "vote-type";
 	
 	public static final String		EVENT_KEYWORD				= "event";
 	public static final String		VOTE_KEYWORD				= "vote";
 	public static final String		INTERVAL_KEYWORD			= "interval";
+	public static final String		PRIORITY_KEYWORD			= "priority";
 	
 	// Service names
 	public static final String		CREATE_USER_SERVICE				= "create-user";
 	public static final String		LOGIN_SERVICE					= "login";
 	public static final String 		CREATE_EVENT_SERVICE 			= "create-event";
 	public static final String 		GET_EVENTS_SERVICE 				= "get-events";
+	public static final String 		ADD_PRIORITY_SERVICE			= "add-priority";
 	public static final String 		CREATE_EVENT_INTERVAL_SERVICE 	= "create-event-interval";
 	public static final String 		GENERATE_INTERVALS_SERVICE 		= "generate-event-intervals";
 	public static final String 		EVENT_INTERVALS_SERVICE 		= "event-intervals";

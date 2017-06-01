@@ -10,19 +10,14 @@ import org.eclipse.swt.widgets.Group;
 import com.eventprogramming.gui.logic.DefaultSelectionListener;
 import com.eventprogramming.gui.logic.PageMediator;
 
-public class HomePageComposite extends Composite {
+public class HomePageComposite extends PageComposite {
 
-	private PageMediator fMediator;
-	
 	public HomePageComposite(Composite parent, int style, PageMediator mediator) {
-		super(parent, style);
-		setLayout(new GridLayout(1, false));
-		
-		fMediator = mediator;
+		super(parent, style, mediator);
 		buildComposite();
 	}
 
-	private void buildComposite() {
+	protected void buildComposite() {
 
 		Group mainGroup = new Group(this, SWT.NONE);
 		mainGroup.setLayout(new GridLayout(2, true));

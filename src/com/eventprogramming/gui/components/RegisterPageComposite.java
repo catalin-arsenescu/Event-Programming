@@ -15,18 +15,14 @@ import com.eventprogramming.client.ClientGUI.STATE;
 import com.eventprogramming.gui.logic.DefaultSelectionListener;
 import com.eventprogramming.gui.logic.PageMediator;
 
-public class RegisterPageComposite extends Composite {
+public class RegisterPageComposite extends PageComposite {
 
-	private PageMediator fMediator;
-	
 	public RegisterPageComposite(Composite parent, int style, PageMediator mediator) {
-		super(parent, style);
-		setLayout(new GridLayout(1, false));
-		fMediator = mediator;
+		super(parent, style, mediator);
 		buildComposite();
 	}
 
-	private void buildComposite() {
+	protected void buildComposite() {
 		Group mainGroup = new Group(this, SWT.NONE);
 		mainGroup.setLayout(new GridLayout(2, true));
 		mainGroup.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, true, true));

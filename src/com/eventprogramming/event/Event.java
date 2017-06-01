@@ -24,6 +24,7 @@ public class Event {
 	private int duration;
 	private String eventCode;
 	private List<EventInterval> fEventIntervals;
+	private List<Priority> fPriorities;
 
 	public Event(String name, String username, int type, Date minStartDate,
 				Date maxEndDate, int startHour, int endHour, int duration, String eventCode) {
@@ -36,6 +37,7 @@ public class Event {
 		this.endHour = endHour;
 		this.duration = duration;
 		this.eventCode = eventCode;
+		fPriorities = new ArrayList<>();
 	}
 
 	public String getEventCode() {
@@ -81,6 +83,36 @@ public class Event {
 	public List<EventInterval> getIntervals() {
 		return fEventIntervals;
 	}
+	
+	public List<Priority> getPriorities() {
+		return fPriorities;
+	}
+	
+	public void parseAndSetPriorities(String response) {
+		fPriorities = new ArrayList<>();
+		JSONObject json;
+		JSONObject priorityJSON;
+		try {
+			json = (JSONObject) new JSONParser().parse(response);
+			int i = 1;
+			while ((priorityJSON = (JSONObject) json.get(Constants.PRIORITY_KEYWORD + i++)) != null) {
+				int priorityValue	= ((Long) priorityJSON.get(Constants.PRIORITY_VALUE_KEYWORD)).intValue();
+				String username 	= (String) priorityJSON.get(Constants.USER_KEYWORD);
+				
+				Priority priority = new Priority(priorityValue, username);
+				
+				addPriority(priority);
+			}
+			
+		} catch (ParseException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+	}
+
+	private void addPriority(Priority priority) {
+		fPriorities.add(priority);
+	}
 
 	public void parseAndSetIntervals(String response) {
 		fEventIntervals = new ArrayList<>();
@@ -94,8 +126,9 @@ public class Event {
 				String startDate	= (String) interval.get(Constants.DATE_KEYWORD);
 				int startHour		= ((Long) interval.get(Constants.START_HOUR_KEYWORD)).intValue();
 				int endHour	 		= ((Long) interval.get(Constants.END_HOUR_KEYWORD)).intValue();
+				int existingVote    = ((Long) interval.get(Constants.VOTE_KEYWORD)).intValue();
 				
-				fEventIntervals.add(new EventInterval(Utils.getDateFromString(startDate), startHour, endHour, intervalId));
+				fEventIntervals.add(new EventInterval(Utils.getDateFromString(startDate), startHour, endHour, intervalId, existingVote));
 			}
 			
 		} catch (ParseException e) {
@@ -111,6 +144,9 @@ public class Event {
 			json = (JSONObject) new JSONParser().parse(response);
 			int i = 1;
 			while ((intervalJSON = (JSONObject) json.get(Constants.INTERVAL_KEYWORD + i++)) != null) {
+				if (intervalJSON.get(Constants.VOTE_KEYWORD + '1') == null) // No votes
+					continue;
+				
 				int intervalId 		= ((Long) ((JSONObject) intervalJSON.get(Constants.VOTE_KEYWORD + '1')).get(Constants.INTERVAL_ID_KEYWORD)).intValue();
 				EventInterval interval = getIntervalById(intervalId);
 				if (interval == null)
@@ -133,4 +169,9 @@ public class Event {
 						
 		return null;
 	}
+	
+	public String toString() {
+		return "Event " + name + " initiated by " + username + " code " + eventCode; 
+	}
+
 }

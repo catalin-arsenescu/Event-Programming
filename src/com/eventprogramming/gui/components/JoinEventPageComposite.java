@@ -30,25 +30,22 @@ import com.eventprogramming.gui.logic.PageMediator;
 import com.eventprogramming.gui.logic.JoinEventPageMediator;
 import com.eventprogramming.widgets.EventIntervalVoteButton;
 
-public class JoinEventPageComposite extends Composite {
+public class JoinEventPageComposite extends PageComposite {
 
 	private static final String EVENT_INFORMATION = "Event Information";
 	private static final String MAIN_POLL = "Event Poll";
 	private static final String VOTE_INFORMATION = "Votes Information";
-	private PageMediator fMediator;
 	private Event fEvent;
 
 	public JoinEventPageComposite(Composite parent, int style, PageMediator mediator, Event event) {
-		super(parent, style);
-		setLayout(new GridLayout(1, false));
+		super(parent, style, mediator);
 
 		fEvent = event;
-		fMediator = mediator;
 		((JoinEventPageMediator) fMediator).setEvent(event);
 		buildComposite();
 	}
 
-	private void buildComposite() {
+	protected void buildComposite() {
 		Group eventSelectGroup = new Group(this, SWT.NONE);
 		eventSelectGroup.setLayout(new GridLayout(1, true));
 		eventSelectGroup.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, true, false));
@@ -140,6 +137,7 @@ public class JoinEventPageComposite extends Composite {
 		for (int i = 0; i < items.length; i++) {
 			TableItem item = items[i];
 			EventInterval interval = eventIntervals.get(i);
+			VoteType existingVote = interval.getVote();
 			
 			String date = interval.getDate().toString();
 			item.setText(0, date);
@@ -151,16 +149,22 @@ public class JoinEventPageComposite extends Composite {
 			editor = new TableEditor(table);
 			editor.grabHorizontal = true;
 			editor.setEditor(yesButton, items[i], 3);
+			if (existingVote == VoteType.YES)
+				yesButton.setSelection(true);
 			
 			EventIntervalVoteButton noButton = new EventIntervalVoteButton(table, interval, IntervalVote.VoteType.NO);
 			editor = new TableEditor(table);
 			editor.grabHorizontal = true;
 			editor.setEditor(noButton, items[i], 4);
+			if (existingVote == VoteType.NO)
+				noButton.setSelection(true);
 			
 			EventIntervalVoteButton ifbButton = new EventIntervalVoteButton(table, interval, IntervalVote.VoteType.IFB);
 			editor = new TableEditor(table);
 			editor.grabHorizontal = true;
 			editor.setEditor(ifbButton, items[i], 5);
+			if (existingVote == VoteType.IFB)
+				ifbButton.setSelection(true);
 			
 			yesButton.setOthers(noButton, ifbButton);
 			noButton.setOthers(yesButton, ifbButton);

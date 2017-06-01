@@ -64,7 +64,7 @@ public class HomePageMediator extends AbstractPageMediator {
 			try {
 				json = (JSONObject) new JSONParser().parse(eventJson);
 				Event event = fClientGUI.getEventCache().parseEvent(json);
-				fClientConnection.getEventIntervals(event);
+				fClientConnection.getEventIntervals(event, fClientGUI.sessionUsername);
 				fClientGUI.initializeJoinEventPage(event);
 			} catch (ParseException e) {
 				// TODO Auto-generated catch block

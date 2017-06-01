@@ -318,6 +318,39 @@ public class MySQLAccess {
 		}
 	}
 
+	public JSONObject getPrioritiesForEvent(String eventCode) {
+		String command;
+		ResultSet resultSet;
+		Statement statement;
+		try {
+			statement = fConnect.createStatement();
+			command = "select * from feedback.ep_priority " + "where event_code=" + "\"" + eventCode + "\"";
+			resultSet = statement.executeQuery(command);
+			JSONObject result = new JSONObject();
+			int i = 1;
+			
+			while (resultSet.next()) {
+				
+				JSONObject priority = new JSONObject();
+				
+				String username = resultSet.getString("username");
+				priority.put(Constants.USER_KEYWORD, username);
+
+				int priorityValue = resultSet.getInt("priority");
+				priority.put(Constants.PRIORITY_VALUE_KEYWORD, priorityValue);
+
+				result.put(Constants.PRIORITY_KEYWORD + i++, priority);
+			}
+
+			return result;
+		} catch (SQLException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+
+		return null;
+	}
+	
 	public JSONObject getVotesForEvent(String eventCode) {
 		JSONObject intervals = getEventIntervals(eventCode);
 		JSONObject interval;
@@ -366,8 +399,12 @@ public class MySQLAccess {
 
 		return new JSONObject();
 	}
-	
+
 	public JSONObject getEventIntervals(String eventCode) {
+		return getEventIntervals(eventCode, null);
+	}
+	
+	public JSONObject getEventIntervals(String eventCode, String username) {
 		int eventId = getIdFromEventCode(eventCode);
 		ResultSet resultSet;
 		String command = "select * from feedback.ep_greedy_intervals " + "where event_id=" + eventId;
@@ -390,6 +427,9 @@ public class MySQLAccess {
 
 				int endHour = resultSet.getInt("end_hour");
 				interval.put(Constants.END_HOUR_KEYWORD, endHour);
+				
+				int existingVote = getVoteTypeForEventAndUsername(interval_id, username);
+				interval.put(Constants.VOTE_KEYWORD, existingVote);
 
 				result.put(Constants.INTERVAL_KEYWORD + i++, interval);
 			}
@@ -402,6 +442,27 @@ public class MySQLAccess {
 		return new JSONObject();
 	}
 
+	public int getVoteTypeForEventAndUsername(int intervalID, String username) {
+		ResultSet resultSet;
+		PreparedStatement statement;
+		try {
+			statement = fConnect.prepareStatement("select * from ep_vote where interval_id=? and username=?");
+			statement.setInt(1, intervalID);
+			statement.setString(2, username);
+			statement.execute();
+			
+			resultSet = statement.getResultSet();
+			if (resultSet != null && resultSet.first())
+				return resultSet.getInt("vote_type");
+
+		} catch (SQLException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+
+		return 2; // DEFAULT IFB
+	}
+	
 	public String getEventForCode(String eventCode) {
 		String command;
 		ResultSet resultSet;
@@ -448,6 +509,11 @@ public class MySQLAccess {
 	}
 
 	public void addVote(int eventId, int intervalId, String username, int voteType) {
+		if (voteExists(eventId, intervalId, username)) {
+			updateVote(eventId, intervalId, username, voteType);
+			return;
+		}	
+		
 		String command;
 		ResultSet resultSet;
 		PreparedStatement statement;
@@ -465,4 +531,104 @@ public class MySQLAccess {
 		}
 
 	}
+
+	private void updateVote(int eventId, int intervalId, String username, int voteType) {
+		PreparedStatement statement;
+		try {
+			statement = fConnect.prepareStatement(
+					"UPDATE feedback.ep_vote SET vote_type=? where event_id=? AND interval_id=? AND username=?");
+			statement.setInt(1, voteType);
+			statement.setInt(2, eventId);
+			statement.setInt(3, intervalId);
+			statement.setString(4, username);
+			statement.executeUpdate();
+			
+		} catch (SQLException e) {
+			e.printStackTrace();
+		}
+		
+	}
+
+	private boolean voteExists(int eventId, int intervalId, String username) {
+		ResultSet resultSet;
+		PreparedStatement statement;
+		try {
+			statement = fConnect.prepareStatement(
+					"select * from feedback.ep_vote where event_id=? AND interval_id=? AND username=?");
+			statement.setInt(1, eventId);
+			statement.setInt(2, intervalId);
+			statement.setString(3, username);
+			
+			resultSet = statement.executeQuery();
+			if (resultSet == null)
+				return false;
+			
+			return resultSet.first();
+		} catch (SQLException e) {
+			e.printStackTrace();
+		}
+		
+		return true;
+	}
+
+	public String addPriority(String eventCode, String username, int priority) {
+		if (userHasPriority(eventCode, username)) {
+			return updatePriority(eventCode, username, priority);
+		}
+		PreparedStatement statement;
+		try {
+			statement = fConnect.prepareStatement(
+					"INSERT INTO feedback.ep_priority(priority, username, event_code) VALUES(?, ?, ?)");
+			statement.setInt(1, priority);
+			statement.setString(2, username);
+			statement.setString(3, eventCode);
+			statement.executeUpdate();
+			
+			return "OK";
+		} catch (SQLException e) {
+			e.printStackTrace();
+		}
+		
+		return "ERROR";
+	}
+
+	private String updatePriority(String eventCode, String username, int priority) {
+		PreparedStatement statement;
+		try {
+			statement = fConnect.prepareStatement(
+					"UPDATE feedback.ep_priority SET priority=? where event_code=? AND username=?");
+			statement.setInt(1, priority);
+			statement.setString(2, eventCode);
+			statement.setString(3, username);
+			statement.executeUpdate();
+			
+			return "OK";
+		} catch (SQLException e) {
+			e.printStackTrace();
+		}
+
+		return "ERROR";
+	}
+
+	private boolean userHasPriority(String eventCode, String username) {
+		ResultSet resultSet;
+		PreparedStatement statement;
+		try {
+			statement = fConnect.prepareStatement(
+					"select * from feedback.ep_priority where event_code=? AND username=?");
+			statement.setString(1, eventCode);
+			statement.setString(2, username);
+			
+			resultSet = statement.executeQuery();
+			if (resultSet == null)
+				return false;
+			
+			return resultSet.first();
+		} catch (SQLException e) {
+			e.printStackTrace();
+		}
+		
+		return true;
+	}
+
 }

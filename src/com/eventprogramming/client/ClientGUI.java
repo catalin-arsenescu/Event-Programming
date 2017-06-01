@@ -54,7 +54,9 @@ import com.eventprogramming.widgets.EventAdministrationCombo;
  * 
  * @author Catalin
  */
-public class ClientGUI {
+public enum ClientGUI {
+	
+	INSTANCE;
 	
 	public enum STATE {
 		WELCOME, REGISTER, HOMEPAGE, CREATE_EVENT, JOIN_EVENT, EVENT_ADMINISTRATION
@@ -62,10 +64,10 @@ public class ClientGUI {
 
 	private ClientConnection fClientConnection;
 
-	private final Display fDisplay;
-	private final Shell fShell;
-	private final Composite fMainComposite;
-	private final StackLayout fLayout;
+	private Display fDisplay;
+	private Shell fShell;
+	private Composite fMainComposite;
+	private StackLayout fLayout;
 
 	private Composite fWelcomePage;
 	private Composite fRegisterPage;
@@ -88,7 +90,7 @@ public class ClientGUI {
 	private PageMediator fEventAdminMediator;
 	private PageMediator fJoinEventPageMediator;
 	
-	public ClientGUI(/* boolean readCredentialsFromSecureStorage */) {
+	public void init(/* boolean readCredentialsFromSecureStorage */) {
 		initializeNonGui();
 
 		/* Initialize display, shell, and main composite */
@@ -102,7 +104,7 @@ public class ClientGUI {
 		fShell.setBackground(new Color(fDisplay, new RGB(6, 15, 125)));
 		fLayout = new StackLayout();
 		fMainComposite.setLayout(fLayout);
-
+		
 		initializeGui();
 		switchState(STATE.WELCOME);
 
@@ -240,7 +242,7 @@ public class ClientGUI {
 	}
 	
 	public static void main(String[] args) {
-		new ClientGUI();
+		ClientGUI.INSTANCE.init();
 	}
 
 	public void setUsername(String text) {
@@ -253,6 +255,26 @@ public class ClientGUI {
 
 	public EventCache getEventCache() {
 		return fEventCache;
+	}
+
+	public void goBack() {
+		switch (fState) {
+		case HOMEPAGE:
+		case WELCOME:
+			break;
+		case REGISTER:
+			switchState(STATE.WELCOME);
+			break;
+		case CREATE_EVENT:
+			switchState(STATE.HOMEPAGE);
+			break;
+		case JOIN_EVENT:
+			switchState(STATE.HOMEPAGE);
+			break;
+		case EVENT_ADMINISTRATION:
+			switchState(STATE.HOMEPAGE);
+			break;
+		}
 	}
 
 }
