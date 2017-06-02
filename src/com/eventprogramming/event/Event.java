@@ -97,55 +97,13 @@ public class Event {
 		return fPriorityMap;
 	}
 	
-	public void parseAndSetPriorities(String response) {
+	public void setPriorities(List<Priority> priorities) {
 		fPriorities = new ArrayList<>();
 		fPriorityMap = new HashMap<>();
-		JSONObject json;
-		JSONObject priorityJSON;
-		try {
-			json = (JSONObject) new JSONParser().parse(response);
-			int i = 1;
-			while ((priorityJSON = (JSONObject) json.get(Constants.PRIORITY_KEYWORD + i++)) != null) {
-				int priorityValue	= ((Long) priorityJSON.get(Constants.PRIORITY_VALUE_KEYWORD)).intValue();
-				String username 	= (String) priorityJSON.get(Constants.USER_KEYWORD);
-				
-				Priority priority = new Priority(priorityValue, username);
-				fPriorityMap.put(username, priorityValue);
-				
-				addPriority(priority);
-			}
-			
-		} catch (ParseException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
-	}
-
-	private void addPriority(Priority priority) {
-		fPriorities.add(priority);
-	}
-
-	public void parseAndSetIntervals(String response) {
-		fEventIntervals = new ArrayList<>();
-		JSONObject json;
-		JSONObject interval;
-		try {
-			json = (JSONObject) new JSONParser().parse(response);
-			int i = 1;
-			while ((interval = (JSONObject) json.get(Constants.INTERVAL_KEYWORD + i++)) != null) {
-				int intervalId 		= ((Long) interval.get(Constants.INTERVAL_ID_KEYWORD)).intValue();
-				String startDate	= (String) interval.get(Constants.DATE_KEYWORD);
-				int startHour		= ((Long) interval.get(Constants.START_HOUR_KEYWORD)).intValue();
-				int endHour	 		= ((Long) interval.get(Constants.END_HOUR_KEYWORD)).intValue();
-				int existingVote    = ((Long) interval.get(Constants.VOTE_KEYWORD)).intValue();
-				
-				EventInterval event = new EventInterval(this, Utils.getDateFromString(startDate), startHour, endHour, intervalId, existingVote);
-				fEventIntervals.add(event);
-			}
-			
-		} catch (ParseException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
+		
+		for (Priority priority : priorities) {
+			fPriorities.add(priority);
+			fPriorityMap.put(priority.getUsername(), priority.getPriorityValue());
 		}
 	}
 

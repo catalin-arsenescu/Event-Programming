@@ -156,7 +156,7 @@ public class ClientConnection {
 		payload.put(Constants.EVENT_CODE_KEYWORD, event.getEventCode());
 		String response = sendMessage(Constants.MESSAGE_TYPE_GET_PRIORITIES, payload);
 		if (!Constants.SERVER_ERROR.equals(response))
-			event.parseAndSetPriorities(response);
+			event.setPriorities(Utils.parsePriorities(response));
 	}
 	
 	@SuppressWarnings("unchecked")
@@ -180,7 +180,7 @@ public class ClientConnection {
 			payload.put(Constants.USER_KEYWORD, username);
 		String response = sendMessage(Constants.MESSAGE_TYPE_GET_INTERVALS, payload);		
 		if (!"ERROR".equals(response))
-			selectedEvent.parseAndSetIntervals(response);
+			selectedEvent.setIntervals(Utils.parseIntervals(selectedEvent, response));
 	}
 
 	@SuppressWarnings("unchecked")
