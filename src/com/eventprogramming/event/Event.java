@@ -3,7 +3,9 @@ package com.eventprogramming.event;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
@@ -25,6 +27,7 @@ public class Event {
 	private String eventCode;
 	private List<EventInterval> fEventIntervals;
 	private List<Priority> fPriorities;
+	private Map<String, Integer> fPriorityMap;
 
 	public Event(String name, String username, int type, Date minStartDate,
 				Date maxEndDate, int startHour, int endHour, int duration, String eventCode) {
@@ -38,6 +41,7 @@ public class Event {
 		this.duration = duration;
 		this.eventCode = eventCode;
 		fPriorities = new ArrayList<>();
+		fPriorityMap = new HashMap<>();
 	}
 
 	public String getEventCode() {
@@ -81,6 +85,7 @@ public class Event {
 	}
 	
 	public List<EventInterval> getIntervals() {
+		Collections.sort(fEventIntervals);
 		return fEventIntervals;
 	}
 	
@@ -88,8 +93,13 @@ public class Event {
 		return fPriorities;
 	}
 	
+	public Map<String, Integer> getPriorityMap() {
+		return fPriorityMap;
+	}
+	
 	public void parseAndSetPriorities(String response) {
 		fPriorities = new ArrayList<>();
+		fPriorityMap = new HashMap<>();
 		JSONObject json;
 		JSONObject priorityJSON;
 		try {
@@ -100,6 +110,7 @@ public class Event {
 				String username 	= (String) priorityJSON.get(Constants.USER_KEYWORD);
 				
 				Priority priority = new Priority(priorityValue, username);
+				fPriorityMap.put(username, priorityValue);
 				
 				addPriority(priority);
 			}
@@ -128,7 +139,8 @@ public class Event {
 				int endHour	 		= ((Long) interval.get(Constants.END_HOUR_KEYWORD)).intValue();
 				int existingVote    = ((Long) interval.get(Constants.VOTE_KEYWORD)).intValue();
 				
-				fEventIntervals.add(new EventInterval(Utils.getDateFromString(startDate), startHour, endHour, intervalId, existingVote));
+				EventInterval event = new EventInterval(this, Utils.getDateFromString(startDate), startHour, endHour, intervalId, existingVote);
+				fEventIntervals.add(event);
 			}
 			
 		} catch (ParseException e) {

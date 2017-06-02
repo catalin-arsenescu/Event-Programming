@@ -187,7 +187,8 @@ public class EventAdminPageComposite extends PageComposite {
 		GridData data = new GridData(SWT.FILL, SWT.TOP, true, false, 2, 1);
 		data.heightHint = 200;
 		table.setLayoutData(data);
-		String[] titles = {"Date", "Starting hour", "Ending hour", "YES Votes", "NO Votes", "IFNEEDBE Votes"};
+		String[] titles = {"Date", "Starting hour", "Ending hour", "YES Votes", "NO Votes",
+							"IFNEEDBE Votes", "Feasibility"};
 		for (int i=0; i<titles.length; i++) {
 			TableColumn column = new TableColumn (table, SWT.NONE);
 			column.setText(titles[i]);
@@ -259,9 +260,10 @@ public class EventAdminPageComposite extends PageComposite {
 			TableItem item = new TableItem(table, SWT.NONE);
 			String date = Utils.printDate(interval.getDate());
 			item.setText(new String[] { date, ""+interval.getStartHour(), ""+interval.getEndHour(),
-										"" +  interval.getVotes(VoteType.YES),
-										"" +  interval.getVotes(VoteType.NO), 
-										"" +  interval.getVotes(VoteType.IFB) });
+										"" +  interval.getVoteCount(VoteType.YES),
+										"" +  interval.getVoteCount(VoteType.NO), 
+										"" +  interval.getVoteCount(VoteType.IFB),
+										"" + interval.getFeasibility() });
 		}
 	}
 

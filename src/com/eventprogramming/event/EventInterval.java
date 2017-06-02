@@ -1,18 +1,23 @@
 package com.eventprogramming.event;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Date;
+import java.util.List;
+import java.util.Map;
 
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
 import org.json.simple.parser.ParseException;
 
+import com.eventprogramming.algorithm.SchedulingAlgorithm;
 import com.eventprogramming.constants.Constants;
 import com.eventprogramming.event.IntervalVote.VoteType;
 import com.eventprogramming.utils.Utils;
 
-public class EventInterval {
+public class EventInterval implements Comparable<EventInterval> {
 	
+	private Event fEvent;
 	private IntervalVote.VoteType vote;
 	private Date fDate;
 	private int fStartHour;
@@ -20,16 +25,24 @@ public class EventInterval {
 	private int id;
 	
 	/**
+	 * Used to determine the best interval
+	 */
+	private int feasibility;
+	
+	/**
 	 * All votes for this interval
 	 */
 	private ArrayList<IntervalVote> fVotes;
 	
-	public EventInterval(Date date, int startHour, int endHour, int id, int existingVote) {
+	public EventInterval(Event event, Date date, int startHour, int endHour, int id, int existingVote) {
 		fDate = date;
 		fStartHour = startHour;
 		fEndHour = endHour;
+		fEvent = event;
 		this.id = id;
 		vote = VoteType.getFromInt(existingVote);
+		
+		feasibility = 0;
 	}
 
 	public void vote(IntervalVote.VoteType voteType) {
@@ -75,10 +88,16 @@ public class EventInterval {
 		} catch (ParseException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
+		} finally {
+			feasibility = SchedulingAlgorithm.computeFeasibility(this);
 		}
 	}
 
-	public int getVotes(VoteType voteType) {
+	public List<IntervalVote> getVotes() {
+		return fVotes != null ? fVotes : Collections.emptyList();
+	}
+	
+	public int getVoteCount(VoteType voteType) {
 		if (fVotes == null)
 			return 0;
 	
@@ -92,6 +111,24 @@ public class EventInterval {
 	
 	@Override
 	public String toString() {
-		return "[" + id + "][" + Utils.printDate(getDate()) + "][" + vote + "]"; 
+		return "[" + id + "][" + Utils.printDate(getDate()) + "][" + vote + "]["
+				+ feasibility + "]"; 
+	}
+
+	public List<Priority> getPriorities() {
+		return fEvent != null ? fEvent.getPriorities() : Collections.emptyList();
+	}
+	
+	public Map<String, Integer> getPriorityMap() {
+		return fEvent != null ? fEvent.getPriorityMap() : Collections.emptyMap();
+	}
+
+	@Override
+	public int compareTo(EventInterval o) {
+		return o.feasibility - feasibility;
+	}
+
+	public int getFeasibility() {
+		return feasibility;
 	}
 }
