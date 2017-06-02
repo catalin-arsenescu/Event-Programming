@@ -55,7 +55,7 @@ public class CreateEventPageMediator extends AbstractPageMediator {
 								endHourSpinner.getSelection(),
 								durationSpinner.getSelection(),
 								sessionUsername);
-			if (createEventOk != "ERROR") {
+			if (!Constants.SERVER_ERROR.equals(createEventOk)) {
 				// Save event in cache
 				Event event = new Event(eventNameText.getText(),
 						sessionUsername,

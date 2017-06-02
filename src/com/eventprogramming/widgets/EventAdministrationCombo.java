@@ -1,7 +1,6 @@
 package com.eventprogramming.widgets;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.events.SelectionEvent;

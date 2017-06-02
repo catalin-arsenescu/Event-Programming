@@ -7,95 +7,39 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
-import java.util.Date;
-import java.util.GregorianCalendar;
 
-import org.eclipse.swt.widgets.DateTime;
 import org.json.simple.JSONObject;
 
 import com.eventprogramming.constants.Constants;
-import com.eventprogramming.event.EventInterval;
 import com.eventprogramming.utils.Utils;
 
 public class MySQLAccess {
 	private Connection fConnect = null;
 	private ResultSet fResultSet = null;
-	private PreparedStatement fPreparedStatement = null;
+	private PreparedStatement statement = null;
 
 	public MySQLAccess() {
-		// This will load the MySQL driver, each DB has its own driver
 		try {
 			Class.forName("com.mysql.jdbc.Driver");
-			// Setup the connection with the DB
 			fConnect = DriverManager.getConnection(Constants.DB_SCHEMA_ADDRESS + Constants.DB_CREDENTIALS);
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
 	}
 
-	public void readDataBase() throws Exception {
-		try {
-
-			// // Statements allow to issue SQL queries to the database
-			// statement = fConnect.createStatement();
-			// // Result set get the result of the SQL query
-			// resultSet = statement.executeQuery("select * from
-			// feedback.comments");
-			// writeResultSet(resultSet);
-
-			// // PreparedStatements can use variables and are more efficient
-			// preparedStatement = connect
-			// .prepareStatement("insert into feedback.comments values (default,
-			// ?, ?, ?, ? , ?, ?)");
-			// // "myuser, webpage, datum, summary, COMMENTS from
-			// // feedback.comments");
-			// // Parameters start with 1
-			// preparedStatement.setString(1, "Test");
-			// preparedStatement.setString(2, "TestEmail");
-			// preparedStatement.setString(3, "TestWebpage");
-			// preparedStatement.setDate(4, new java.sql.Date(2009, 12, 11));
-			// preparedStatement.setString(5, "TestSummary");
-			// preparedStatement.setString(6, "TestComment");
-			// preparedStatement.executeUpdate();
-			//
-			// preparedStatement = connect
-			// .prepareStatement("SELECT myuser, webpage, datum, summary,
-			// COMMENTS from feedback.comments");
-			// resultSet = preparedStatement.executeQuery();
-			// writeResultSet(resultSet);
-			//
-			// // Remove again the insert comment
-			// preparedStatement = connect.prepareStatement("delete from
-			// feedback.comments where myuser= ? ; ");
-			// preparedStatement.setString(1, "Test");
-			// preparedStatement.executeUpdate();
-			//
-			// resultSet = statement.executeQuery("select * from
-			// feedback.comments");
-			// writeMetaData(resultSet);
-
-		} catch (Exception e) {
-			throw e;
-		} finally {
-			close();
-		}
-
-	}
-
 	/**
 	 * Accepts an user login
 	 */
-	public String acceptLogin(String username, String password) {
+	public String login(String username, String password) {
 		try {
 
-			Statement statement = fConnect.createStatement();
-			// Result set get the result of the SQL query
-			String command = "select * from feedback.epuser " + "where username=" + "\"" + username + "\"";
-			ResultSet resultSet = statement.executeQuery(command);
+			String command = "select * from feedback.epuser where username=?";
+			PreparedStatement statement = fConnect.prepareStatement(command);
+			statement.setString(1, username);
+			ResultSet resultSet = statement.executeQuery();
 			if (!resultSet.next())
-				return "ERROR";
+				return Constants.SERVER_ERROR;
 
-			String DBUser = resultSet.getString("username");
 			String DBPassword = resultSet.getString("password");
 			String DBSalt = resultSet.getString("salt");
 
@@ -107,23 +51,22 @@ public class MySQLAccess {
 
 			boolean passwordOK = DBPassword.equals(encryptedPassword);
 			if (!passwordOK)
-				return "ERROR";
+				return Constants.SERVER_ERROR;
 
-			return getEventsForUsername(username).toJSONString();
+			return getEventsForUsername(username);
 		} catch (Exception e) {
-			// TODO: handle exception
 			e.printStackTrace();
 		}
 		return null;
 	}
 
-	private JSONObject getEventsForUsername(String username) throws SQLException {
-		String command;
-		ResultSet resultSet;
-		Statement statement = fConnect.createStatement();
-
-		command = "select * from feedback.ep_event " + "where initiator=" + "\"" + username + "\"";
-		resultSet = statement.executeQuery(command);
+	@SuppressWarnings("unchecked")
+	private String getEventsForUsername(String username) throws SQLException {
+		String command = "select * from feedback.ep_event where initiator=?";
+		PreparedStatement statement = fConnect.prepareStatement(command);
+		statement.setString(1, username);
+		ResultSet resultSet = statement.executeQuery();
+		
 		JSONObject result = new JSONObject();
 		int i = 1;
 		while (resultSet.next()) {
@@ -159,74 +102,118 @@ public class MySQLAccess {
 			result.put(Constants.EVENT_KEYWORD + i++, event);
 		}
 
-		return result;
+		return result.toJSONString();
 	}
 
 	/**
-	 * Inserts event into database TODO check if event exists
+	 * Inserts event into database
 	 */
 	public String insertEvent(String eventName, int isGreedy, String startDate, String endDate, int startHour,
 			int endHour, int duration, String username, String eventCode) {
+		
+		if (eventExists(eventName))
+			return Constants.SERVER_ERROR;
+		
 		try {
-			fPreparedStatement = fConnect.prepareStatement("insert into feedback.ep_event"
-					+ " (is_greedy, start_date, end_date, start_hour, end_hour, duration, initiator, event_code, event_name)"
-					+ " values (?, ?, ?, ?, ?, ?, ?, ?, ?)");
-			fPreparedStatement.setInt(1, isGreedy);
-			fPreparedStatement.setString(2, startDate);
-			fPreparedStatement.setString(3, endDate);
-			fPreparedStatement.setInt(4, startHour);
-			fPreparedStatement.setInt(5, endHour);
-			fPreparedStatement.setInt(6, duration);
-			fPreparedStatement.setString(7, username);
-			fPreparedStatement.setString(8, eventCode);
-			fPreparedStatement.setString(9, eventName);
-			fPreparedStatement.executeUpdate();
+			String command = "insert into feedback.ep_event"
+					+ " (is_greedy, start_date, end_date, start_hour, "
+					+ "end_hour, duration, initiator, event_code, event_name)"
+					+ " values (?, ?, ?, ?, ?, ?, ?, ?, ?)";
+			PreparedStatement statement = fConnect.prepareStatement(command);
+			statement.setInt(1, isGreedy);
+			statement.setString(2, startDate);
+			statement.setString(3, endDate);
+			statement.setInt(4, startHour);
+			statement.setInt(5, endHour);
+			statement.setInt(6, duration);
+			statement.setString(7, username);
+			statement.setString(8, eventCode);
+			statement.setString(9, eventName);
+			statement.executeUpdate();
 
 			return eventCode;
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
 
-		return "ERROR";
+		return Constants.SERVER_ERROR;
+	}
+
+	private boolean eventExists(String eventName) {
+		try {
+			
+			String command = "select * from feedback.ep_event where event_name=?";
+			PreparedStatement statement = fConnect.prepareStatement(command);
+			statement.setString(1, eventName);
+			ResultSet result = statement.executeQuery();
+			
+			return result.next();
+			
+		} catch (SQLException e) {
+			e.printStackTrace();
+		}
+		
+		return true;
 	}
 
 	/**
-	 * Inserts event into database TODO check if event exists
+	 * Inserts event interval into database
 	 */
 	public String insertEventInterval(String eventCode, String date, int startHour, int endHour) {
 		try {
-			int eventId = getIdFromEventCode(eventCode);
-			if (eventId < 0)
-				return "ERROR";
+			int eventID = getIdFromEventCode(eventCode);
+			if (eventID < 0)
+				return Constants.SERVER_ERROR;
+			
+			if (intervalExists(eventID, date, startHour, endHour))
+				return Constants.SERVER_ERROR;
 
-			fPreparedStatement = fConnect.prepareStatement("insert into feedback.ep_greedy_intervals"
-					+ " (event_id, date, start_hour, end_hour)" + " values (?, ?, ?, ?)");
-			fPreparedStatement.setInt(1, eventId);
-			fPreparedStatement.setString(2, date);
-			fPreparedStatement.setInt(3, startHour);
-			fPreparedStatement.setInt(4, endHour);
-			fPreparedStatement.executeUpdate();
+			String command = "insert into feedback.ep_greedy_intervals (event_id, date, start_hour, end_hour)" + " values (?, ?, ?, ?)";
+			PreparedStatement statement = fConnect.prepareStatement(command);
+			statement.setInt(1, eventID);
+			statement.setString(2, date);
+			statement.setInt(3, startHour);
+			statement.setInt(4, endHour);
+			statement.executeUpdate();
 
-			return "OK";
+			return Constants.SERVER_OK;
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
 
-		return "ERROR";
+		return Constants.SERVER_ERROR;
+	}
+
+	private boolean intervalExists(int eventID, String date, int startHour, int endHour) {
+		try {
+			
+			String command = "select * from feedback.ep_greedy_intervals where event_id=? AND date=? AND start_hour=? AND end_hour=?";
+			PreparedStatement statement = fConnect.prepareStatement(command);
+			statement.setInt(1, eventID);
+			statement.setString(2, date);
+			statement.setInt(3, startHour);
+			statement.setInt(4, endHour);
+			ResultSet result = statement.executeQuery();
+			
+			return result.next();
+			
+		} catch (SQLException e) {
+			e.printStackTrace();
+		}
+		
+		return true;
 	}
 
 	private int getIdFromEventCode(String eventCode) {
 
 		try {
 			PreparedStatement preparedStatement = fConnect
-					.prepareStatement("select event_id from feedback.ep_event where event_code=?;");
+					.prepareStatement("select event_id from feedback.ep_event where event_code=?");
 			preparedStatement.setString(1, eventCode);
 			ResultSet executeQuery = preparedStatement.executeQuery();
-			while (executeQuery.next()) {
+			while (executeQuery.next())
 				return executeQuery.getInt("event_id");
-			}
 		} catch (SQLException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
 		return -1;
@@ -239,11 +226,9 @@ public class MySQLAccess {
 					.prepareStatement("select event_id from feedback.ep_greedy_intervals where interval_id=?;");
 			preparedStatement.setInt(1, intervalId);
 			ResultSet executeQuery = preparedStatement.executeQuery();
-			while (executeQuery.next()) {
+			while (executeQuery.next())
 				return executeQuery.getInt("event_id");
-			}
 		} catch (SQLException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
 		return -1;
@@ -254,78 +239,31 @@ public class MySQLAccess {
 	 */
 	public String insertUser(String user, String password, String email, String salt) {
 		try {
-			fPreparedStatement = fConnect.prepareStatement("insert into  feedback.epuser values (?, ?, ?, ?)");
-			fPreparedStatement.setString(1, user); // Name
-			fPreparedStatement.setString(2, password); // Encrypted password
-			fPreparedStatement.setString(3, email); // E-mail
-			fPreparedStatement.setString(4, salt); // Salt
-			fPreparedStatement.executeUpdate();
+			
+			String command = "insert into  feedback.epuser values (?, ?, ?, ?)";
+			PreparedStatement statement = fConnect.prepareStatement(command);
+			statement.setString(1, user); // Name
+			statement.setString(2, password); // Encrypted password
+			statement.setString(3, email); // E-mail
+			statement.setString(4, salt); // Salt
+			statement.executeUpdate();
 
-			return "OK";
+			return Constants.SERVER_OK;
+			
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
 
-		return "ERROR";
+		return Constants.SERVER_ERROR;
 	}
 
-	private void writeMetaData(ResultSet resultSet) throws SQLException {
-		// Now get some metadata from the database
-		// Result set get the result of the SQL query
-
-		System.out.println("The columns in the table are: ");
-
-		System.out.println("Table: " + resultSet.getMetaData().getTableName(1));
-		for (int i = 1; i <= resultSet.getMetaData().getColumnCount(); i++) {
-			System.out.println("Column " + i + " " + resultSet.getMetaData().getColumnName(i));
-		}
-	}
-
-	private void writeResultSet(ResultSet resultSet) throws SQLException {
-		// ResultSet is initially before the first data set
-		while (resultSet.next()) {
-			// It is possible to get the columns via name
-			// also possible to get the columns via the column number
-			// which starts at 1
-			// e.g. resultSet.getSTring(2);
-			String user = resultSet.getString("username");
-			String password = resultSet.getString("password");
-			String email = resultSet.getString("email");
-			String salt = resultSet.getString("salt");
-			// System.out.println("User: " + user);
-			// System.out.println("Password: " + password);
-			// System.out.println("Email: " + email);
-			// System.out.println("Salt: " + salt);
-		}
-	}
-
-	// You need to close the resultSet
-	private void close() {
-		try {
-			if (fResultSet != null) {
-				fResultSet.close();
-			}
-
-			if (fPreparedStatement != null) {
-				fPreparedStatement.close();
-			}
-
-			if (fConnect != null) {
-				fConnect.close();
-			}
-		} catch (Exception e) {
-
-		}
-	}
-
+	@SuppressWarnings("unchecked")
 	public JSONObject getPrioritiesForEvent(String eventCode) {
-		String command;
-		ResultSet resultSet;
-		Statement statement;
 		try {
-			statement = fConnect.createStatement();
-			command = "select * from feedback.ep_priority " + "where event_code=" + "\"" + eventCode + "\"";
-			resultSet = statement.executeQuery(command);
+			String command = "select * from feedback.ep_priority where event_code=?";
+			PreparedStatement statement = fConnect.prepareStatement(command);
+			statement.setString(1, eventCode);
+			ResultSet resultSet = statement.executeQuery();
 			JSONObject result = new JSONObject();
 			int i = 1;
 			
@@ -343,14 +281,15 @@ public class MySQLAccess {
 			}
 
 			return result;
+			
 		} catch (SQLException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
 
-		return null;
+		return new JSONObject();
 	}
 	
+	@SuppressWarnings("unchecked")
 	public JSONObject getVotesForEvent(String eventCode) {
 		JSONObject intervals = getEventIntervals(eventCode);
 		JSONObject interval;
@@ -358,13 +297,13 @@ public class MySQLAccess {
 		int i = 1;
 		while ((interval = (JSONObject) intervals.get(Constants.INTERVAL_KEYWORD + i++)) != null) {
 			int intervalId = (int) interval.get(Constants.INTERVAL_ID_KEYWORD);
-			
 			result.put(Constants.INTERVAL_KEYWORD + (i-1), getVotesForInterval(intervalId));
 		}
 		
 		return result;
 	}
 	
+	@SuppressWarnings("unchecked")
 	public JSONObject getVotesForInterval(int intervalId) {
 		ResultSet resultSet;
 		String command = "select * from feedback.ep_vote " + "where interval_id=" + intervalId;
@@ -404,6 +343,7 @@ public class MySQLAccess {
 		return getEventIntervals(eventCode, null);
 	}
 	
+	@SuppressWarnings("unchecked")
 	public JSONObject getEventIntervals(String eventCode, String username) {
 		int eventId = getIdFromEventCode(eventCode);
 		ResultSet resultSet;
@@ -456,13 +396,13 @@ public class MySQLAccess {
 				return resultSet.getInt("vote_type");
 
 		} catch (SQLException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
 
 		return 2; // DEFAULT IFB
 	}
 	
+	@SuppressWarnings("unchecked")
 	public String getEventForCode(String eventCode) {
 		String command;
 		ResultSet resultSet;
@@ -505,7 +445,7 @@ public class MySQLAccess {
 			e.printStackTrace();
 		}
 
-		return null;
+		return Constants.SERVER_ERROR;
 	}
 
 	public void addVote(int eventId, int intervalId, String username, int voteType) {
@@ -514,8 +454,6 @@ public class MySQLAccess {
 			return;
 		}	
 		
-		String command;
-		ResultSet resultSet;
 		PreparedStatement statement;
 		try {
 			statement = fConnect.prepareStatement("insert into feedback.ep_vote(event_id, interval_id, username, vote_type) values(?, ?, ?, ?)");
@@ -526,7 +464,6 @@ public class MySQLAccess {
 			statement.executeUpdate();
 
 		} catch (SQLException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
 
@@ -584,12 +521,12 @@ public class MySQLAccess {
 			statement.setString(3, eventCode);
 			statement.executeUpdate();
 			
-			return "OK";
+			return Constants.SERVER_OK;
 		} catch (SQLException e) {
 			e.printStackTrace();
 		}
 		
-		return "ERROR";
+		return Constants.SERVER_ERROR;
 	}
 
 	private String updatePriority(String eventCode, String username, int priority) {
@@ -629,6 +566,29 @@ public class MySQLAccess {
 		}
 		
 		return true;
+	}
+
+	public String deleteIntervals(String eventCode) {
+		try {
+			int id = getIdFromEventCode(eventCode);
+			if (id < 0)
+				return Constants.SERVER_ERROR;
+			
+			String command = "delete from feedback.ep_greedy_intervals where event_id=?";
+			PreparedStatement statement = fConnect.prepareStatement(command);
+			statement.setInt(1, id);
+			statement.executeUpdate();
+			
+			command = "delete from feedback.ep_vote where event_id=?";
+			statement = fConnect.prepareStatement(command);
+			statement.setInt(1, id);
+			statement.executeUpdate();
+			
+			return Constants.SERVER_OK;
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		return null;
 	}
 
 }

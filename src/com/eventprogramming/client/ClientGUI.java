@@ -162,13 +162,13 @@ public enum ClientGUI {
 		case WELCOME:
 		case REGISTER:
 		case HOMEPAGE:
-		case CREATE_EVENT:
 			width = clientArea.width / 2;
 			height = clientArea.height / 2;
 			x = width / 2;
 			y = height / 2;
 			return new Rectangle(x, y, width, height);
 		case JOIN_EVENT:
+		case CREATE_EVENT:
 		case EVENT_ADMINISTRATION:
 			width = clientArea.width * 2 / 3;
 			height = clientArea.height * 2 / 3;

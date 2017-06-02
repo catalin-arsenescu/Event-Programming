@@ -57,12 +57,28 @@ public class Constants {
 	public static final String		SEND_VOTES_SERVICE				= "send-votes";
 
 	public static final String 		SERVER_OFFLINE_ERROR 	= "Server cannot be reached! Check your Internet connection and try again!";
+	
+	// Server port
+	public static final int 		MAIN_SERVER_PORT				= 6888;
 
-
-
-
-
-
+	// Server error messages
+	public static final String 		SERVER_ERROR 					= "ERROR";
+	public static final String 		SERVER_OK 					= "OK";
+	
+	// Message types
+	public static final String		MESSAGE_TYPE					= "MESSAGE-TYPE";
+	public static final String		MESSAGE_PAYLOAD					= "MESSAGE-PAYLOAD";
+	public static final String		MESSAGE_TYPE_LOGIN				= "MESSAGE-TYPE-LOGIN";
+	public static final String		MESSAGE_TYPE_REGISTER			= "MESSAGE-TYPE-REGISTER";
+	public static final String		MESSAGE_TYPE_CREATE_EVENT		= "MESSAGE-TYPE-CREATE-EVENT";
+	public static final String		MESSAGE_TYPE_CREATE_INTERVAL	= "MESSAGE-TYPE-CREATE-INTERVAL";
+	public static final String		MESSAGE_TYPE_GET_INTERVALS		= "MESSAGE-TYPE-GET-INTERVALS";
+	public static final String		MESSAGE_TYPE_GET_EVENTS			= "MESSAGE-TYPE-GET-EVENTS";
+	public static final String		MESSAGE_TYPE_SAVE_VOTES			= "MESSAGE-TYPE-SAVE-VOTES";
+	public static final String		MESSAGE_TYPE_GET_VOTES			= "MESSAGE-TYPE-GET-VOTES";
+	public static final String		MESSAGE_TYPE_ADD_PRIORITY		= "MESSAGE-TYPE-ADD-PRIORITY";
+	public static final String		MESSAGE_TYPE_GET_PRIORITIES		= "MESSAGE-TYPE-GET-PRIORITES";
+	public static final String 		MESSAGE_TYPE_DELETE_INTEVALS 	= "MESSAGE-TYPE-DELETE-INTERVALS";
 
 
 }

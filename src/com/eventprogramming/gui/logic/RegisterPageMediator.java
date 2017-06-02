@@ -35,8 +35,7 @@ public class RegisterPageMediator extends AbstractPageMediator {
 			Text passText = (Text) getControl("passText");
 			Text emailText = (Text) getControl("emailText");
 			
-			boolean registerDone = fClientConnection.sendNewUserCredentials(userText.getText(),
-					passText.getText(), emailText.getText());
+			boolean registerDone = fClientConnection.sendNewUserCredentials(userText.getText(), passText.getText(), emailText.getText());
 			if (registerDone)
 				fClientGUI.switchState(STATE.WELCOME);
 		} else

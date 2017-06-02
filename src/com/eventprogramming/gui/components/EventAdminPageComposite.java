@@ -184,6 +184,7 @@ public class EventAdminPageComposite extends PageComposite {
 		Table table = new Table (mainGroup, SWT.MULTI | SWT.BORDER | SWT.FULL_SELECTION | SWT.V_SCROLL);
 		table.setLinesVisible(true);
 		table.setHeaderVisible(true);
+		fMediator.registerControl(table, "intervalsTable");
 		GridData data = new GridData(SWT.FILL, SWT.TOP, true, false, 2, 1);
 		data.heightHint = 200;
 		table.setLayoutData(data);
@@ -286,18 +287,18 @@ public class EventAdminPageComposite extends PageComposite {
 		Label minDateLabel = new Label(mainGroup, SWT.NONE);
 		minDateLabel.setText("Earliest date:");
 		minDateLabel.setLayoutData(new GridData(GridData.HORIZONTAL_ALIGN_CENTER));
-		DateTime minDateTime = new DateTime(mainGroup, SWT.BORDER | SWT.DATE | SWT.DROP_DOWN);
+		Text minDateTime = new Text(mainGroup, SWT.NONE);
 		Date eventMinDate = event.getMinStartDate();
-		minDateTime.setDate(eventMinDate.getDay(), eventMinDate.getMonth(), eventMinDate.getDay());
+		minDateTime.setText(Utils.printDate(eventMinDate));
 		minDateTime.setEnabled(false);
 		minDateTime.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
 		
 		Label maxDateLabel = new Label(mainGroup, SWT.NONE);
 		maxDateLabel.setText("Latest date:");
 		maxDateLabel.setLayoutData(new GridData(GridData.HORIZONTAL_ALIGN_CENTER));
-		DateTime maxDateTime = new DateTime(mainGroup, SWT.BORDER | SWT.DATE | SWT.DROP_DOWN);
+		Text maxDateTime = new Text(mainGroup, SWT.NONE);
 		Date eventMaxDate = event.getMaxEndDate();
-		maxDateTime.setDate(eventMaxDate.getDay(), eventMaxDate.getMonth(), eventMaxDate.getDay());
+		maxDateTime.setText(Utils.printDate(eventMaxDate));
 		maxDateTime.setEnabled(false);
 		maxDateTime.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
 		

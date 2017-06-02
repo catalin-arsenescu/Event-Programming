@@ -8,17 +8,13 @@ import java.net.Socket;
 import java.nio.ByteBuffer;
 import java.security.SecureRandom;
 import java.util.Base64;
-import java.util.Collections;
 import java.util.List;
 
 import org.eclipse.swt.widgets.DateTime;
 import org.json.simple.JSONObject;
-import org.json.simple.parser.JSONParser;
-import org.json.simple.parser.ParseException;
 
 import com.eventprogramming.constants.Constants;
 import com.eventprogramming.event.Event;
-import com.eventprogramming.event.EventInterval;
 import com.eventprogramming.event.IntervalVote;
 import com.eventprogramming.utils.Utils;
 
@@ -26,160 +22,82 @@ public class ClientConnection {
 
 	private ClientGUI fClientGUI;
 	private final SecureRandom fRandomGenerator;
-	private JSONObject fServicePorts;
 
 	public ClientConnection(ClientGUI clientGUI) {
 		this.fClientGUI = clientGUI;
-		fRandomGenerator = new SecureRandom(
-				ByteBuffer.allocate(Long.SIZE / Byte.SIZE).putLong(System.nanoTime()).array());
-		sendHello();
-	}
-
-	public void sendHello() {
-		Socket clientSocket;
-		try {
-			clientSocket = new Socket("localhost", 6789);
-			DataOutputStream outToServer = new DataOutputStream(clientSocket.getOutputStream());
-			BufferedReader inFromServer = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
-			outToServer.writeBytes("HELLO" + '\n');
-			String response = inFromServer.readLine();
-			System.out.println("FROM SERVER: " + response);
-			
-			// Parse JSON response and save services
-			fServicePorts = (JSONObject) new JSONParser().parse(response);
-			clientSocket.close();
-		} catch (IOException | ParseException e) {
-			e.printStackTrace();
-		}
-	}
-
-	@SuppressWarnings("unchecked")
-	public boolean sendLogin(String username, String password) {
-		int port = getPort(Constants.LOGIN_SERVICE);
-		if (port < 0) {
-			fClientGUI.reportError(Constants.SERVER_OFFLINE_ERROR);
-			return false;
-		}
-		
-		JSONObject json = new JSONObject();
-		json.put(Constants.USER_KEYWORD, username);
-		json.put(Constants.PASS_KEYWORD, password);
-		String message = json.toJSONString() + '\n';
-		System.out.println("SENDING" + message);
-		
-		Socket clientSocket;
-		try {
-			clientSocket = new Socket("localhost", port);
-			DataOutputStream outToServer = new DataOutputStream(clientSocket.getOutputStream());
-			BufferedReader inFromServer = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
-			outToServer.writeBytes(message);
-			String response = inFromServer.readLine();
-			clientSocket.close();
-			System.out.println("FROM SERVER: " + response);
-			if ("ERROR".equals(response)) {
-				return false;
-			} else {
-				fClientGUI.fEventCache.addEvents(response);
-				return true;
-			}
-		} catch (IOException e) {
-			e.printStackTrace();
-		}
-		
-		return false;
+		fRandomGenerator = new SecureRandom(ByteBuffer.allocate(Long.SIZE / Byte.SIZE).putLong(System.nanoTime()).array());
 	}
 	
-	@SuppressWarnings({"unchecked"})
-	public boolean sendNewUserCredentials(String username, String password, String email) {
-		int port = getPort(Constants.CREATE_USER_SERVICE);
-		if (port < 0) {
-			fClientGUI.reportError(Constants.SERVER_OFFLINE_ERROR);
-			return false;
-		}
-		
+	@SuppressWarnings("unchecked")
+	private String sendMessage(String messageType, JSONObject payload) {
 		JSONObject json = new JSONObject();
-		json.put(Constants.USER_KEYWORD, username);
-		json.put(Constants.PASS_KEYWORD, password);
-		json.put(Constants.EMAIL_KEYWORD, email);
-		json.put(Constants.SALT_KEYWORD, generateSalt());
-		String message = json.toJSONString() + '\n';
+		json.put(Constants.MESSAGE_TYPE, messageType);
+		json.put(Constants.MESSAGE_PAYLOAD, payload);
+		String message = json.toJSONString() + '\n'; 
 		System.out.println("SENDING" + message);
 		
-		Socket clientSocket;
 		try {
-			clientSocket = new Socket("localhost", port);
+			
+			Socket clientSocket = new Socket("localhost", Constants.MAIN_SERVER_PORT);
 			DataOutputStream outToServer = new DataOutputStream(clientSocket.getOutputStream());
 			BufferedReader inFromServer = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
 			outToServer.writeBytes(message);
 			String response = inFromServer.readLine();
 			clientSocket.close();
 			System.out.println("FROM SERVER: " + response);
-			if ("OK".equals(response))
-				return true;
-			else 
-				return false;
+			return response == null ? "" : response;
+			
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
 		
-		return true;
+		return Constants.SERVER_ERROR;
+	}
+	
+	@SuppressWarnings("unchecked")
+	public boolean sendLogin(String username, String password) {
+		JSONObject payload = new JSONObject();
+		payload.put(Constants.USER_KEYWORD, username);
+		payload.put(Constants.PASS_KEYWORD, password);
+		
+		String response = sendMessage(Constants.MESSAGE_TYPE_LOGIN, payload);
+		if (Constants.SERVER_ERROR.equals(response)) {
+			return false;
+		} else {
+			fClientGUI.fEventCache.addEvents(response);
+			return true;
+		}
 	}
 
-	private int getPort(String serviceName) {
-		if (fServicePorts == null)
-			return -1;
+	@SuppressWarnings({"unchecked"})
+	public boolean sendNewUserCredentials(String username, String password, String email) {
+		JSONObject payload = new JSONObject();
+		payload.put(Constants.USER_KEYWORD, username);
+		payload.put(Constants.PASS_KEYWORD, password);
+		payload.put(Constants.EMAIL_KEYWORD, email);
+		payload.put(Constants.SALT_KEYWORD, generateSalt());
 		
-		Long queryResult = (Long)fServicePorts.get(serviceName);
-		if (queryResult == null)
-			return -1;
-		
-		return queryResult.intValue();
-	}
-
-	private String generateSalt() {
-		byte[] salt = new byte[32];
-		fRandomGenerator.nextBytes(salt);
-		return Base64.getEncoder().encodeToString(salt);
+		String response = sendMessage(Constants.MESSAGE_TYPE_REGISTER, payload);
+		if (Constants.SERVER_OK.equals(response))
+			return true;
+		else 
+			return false;
 	}
 
 	@SuppressWarnings("unchecked")
-	public String sendNewEvent(String eventName, boolean isGreedy, DateTime startDate, DateTime endDate,
-			int startHour, int endHour, int duration, String username) {
-
-		int port = getPort(Constants.CREATE_EVENT_SERVICE);
-		if (port < 0) {
-			fClientGUI.reportError(Constants.SERVER_OFFLINE_ERROR);
-			return "ERROR";
-		}
+	public String sendNewEvent(String eventName, boolean isGreedy, DateTime startDate, DateTime endDate, int startHour, int endHour, int duration, String username) {
+		JSONObject payload = new JSONObject();
+		payload.put(Constants.EVENT_NAME_KEYWORD, eventName);
+		payload.put(Constants.GREEDY_KEYWORD, isGreedy ? 1 : 0);
+		payload.put(Constants.MIN_START_DATE_KEYWORD, Utils.getDateString(startDate));
+		payload.put(Constants.MAX_END_DATE_KEYWORD, Utils.getDateString(endDate));
+		payload.put(Constants.START_HOUR_KEYWORD, startHour);
+		payload.put(Constants.END_HOUR_KEYWORD, endHour);
+		payload.put(Constants.DURATION_KEYWORD, duration);
+		payload.put(Constants.USER_KEYWORD, username);
 		
-		JSONObject json = new JSONObject();
-		json.put(Constants.EVENT_NAME_KEYWORD, eventName);
-		json.put(Constants.GREEDY_KEYWORD, isGreedy ? 1 : 0);
-		json.put(Constants.MIN_START_DATE_KEYWORD, Utils.getDateString(startDate));
-		json.put(Constants.MAX_END_DATE_KEYWORD, Utils.getDateString(endDate));
-		json.put(Constants.START_HOUR_KEYWORD, startHour);
-		json.put(Constants.END_HOUR_KEYWORD, endHour);
-		json.put(Constants.DURATION_KEYWORD, duration);
-		json.put(Constants.USER_KEYWORD, username);
-		
-		String message = json.toJSONString() + '\n';
-		System.out.println("SENDING" + message);
-		
-		Socket clientSocket;
-		try {
-			clientSocket = new Socket("localhost", port);
-			DataOutputStream outToServer = new DataOutputStream(clientSocket.getOutputStream());
-			BufferedReader inFromServer = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
-			outToServer.writeBytes(message);
-			String response = inFromServer.readLine();
-			clientSocket.close();
-			System.out.println("FROM SERVER: " + response);
-			return response;
-		} catch (IOException e) {
-			e.printStackTrace();
-		}
-		
-		return "ERROR";
+		String response = sendMessage(Constants.MESSAGE_TYPE_CREATE_EVENT, payload);
+		return response;
 	}
 	
 	public String sendNewEventInterval(String eventCode, DateTime date, int startHour, int endHour) {
@@ -187,47 +105,29 @@ public class ClientConnection {
 	}
 	
 	@SuppressWarnings("unchecked")
+	public String deleteEventIntervals(String eventCode) {
+		JSONObject payload = new JSONObject();
+		payload.put(Constants.EVENT_CODE_KEYWORD, eventCode);
+		
+		String response = sendMessage(Constants.MESSAGE_TYPE_DELETE_INTEVALS, payload);
+		return response;
+	}
+	
+	@SuppressWarnings("unchecked")
 	public String sendNewEventInterval(String eventCode, String date, int startHour, int endHour) {
-		int port = getPort(Constants.CREATE_EVENT_INTERVAL_SERVICE);
-		if (port < 0) {
-			fClientGUI.reportError(Constants.SERVER_OFFLINE_ERROR);
-			return "ERROR";
-		}
+		JSONObject payload = new JSONObject();
+		payload.put(Constants.EVENT_CODE_KEYWORD, eventCode);
+		payload.put(Constants.DATE_KEYWORD, date);
+		payload.put(Constants.START_HOUR_KEYWORD, startHour);
+		payload.put(Constants.END_HOUR_KEYWORD, endHour);
 		
-		JSONObject json = new JSONObject();
-		json.put(Constants.EVENT_CODE_KEYWORD, eventCode);
-		json.put(Constants.DATE_KEYWORD, date);
-		json.put(Constants.START_HOUR_KEYWORD, startHour);
-		json.put(Constants.END_HOUR_KEYWORD, endHour);
-		
-		String message = json.toJSONString() + '\n';
-		System.out.println("SENDING" + message);
-		
-		Socket clientSocket;
-		try {
-			clientSocket = new Socket("localhost", port);
-			DataOutputStream outToServer = new DataOutputStream(clientSocket.getOutputStream());
-			BufferedReader inFromServer = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
-			outToServer.writeBytes(message);
-			String response = inFromServer.readLine();
-			clientSocket.close();
-			System.out.println("FROM SERVER: " + response);
-			return response;
-		} catch (IOException e) {
-			e.printStackTrace();
-		}
-		
-		return "ERROR";
+		String response = sendMessage(Constants.MESSAGE_TYPE_CREATE_INTERVAL, payload);
+		return response;
 	}
 
+	@SuppressWarnings("unchecked")
 	public void sendEventVotes(List<IntervalVote> votes) {
-		int port = getPort(Constants.SEND_VOTES_SERVICE);
-		if (port < 0) {
-			fClientGUI.reportError(Constants.SERVER_OFFLINE_ERROR);
-			return;
-		}
-		
-		JSONObject json = new JSONObject();
+		JSONObject payload = new JSONObject();
 		int i = 1;
 		for (IntervalVote interval : votes) {
 			JSONObject voteJson = new JSONObject();
@@ -244,86 +144,27 @@ public class ClientConnection {
 			int voteType = interval.getTypeInt();
 			voteJson.put(Constants.VOTE_TYPE_KEYWORD, voteType);
 
-			json.put(Constants.VOTE_KEYWORD + i++, voteJson);
+			payload.put(Constants.VOTE_KEYWORD + i++, voteJson);
 		}
 		
-		String message = json.toJSONString() + '\n';
-		System.out.println("SENDING" + message);
-		
-		Socket clientSocket;
-		try {
-			clientSocket = new Socket("localhost", port);
-			DataOutputStream outToServer = new DataOutputStream(clientSocket.getOutputStream());
-			BufferedReader inFromServer = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
-			outToServer.writeBytes(message);
-			String response = inFromServer.readLine();
-			clientSocket.close();
-			// TODO HANDLE RESPONSE
-		} catch (IOException e) {
-			e.printStackTrace();
-		}
-		
-		return;
+		sendMessage(Constants.MESSAGE_TYPE_SAVE_VOTES, payload);
 	}
 
+	@SuppressWarnings("unchecked")
 	public void getPrioritiesForEvent(Event event) {
-		int port = getPort(Constants.ADD_PRIORITY_SERVICE);
-		if (port < 0) {
-			fClientGUI.reportError(Constants.SERVER_OFFLINE_ERROR);
-			return;
-		}
-		
-		JSONObject json = new JSONObject();
-		String message = "GET_" + event.getEventCode() + '\n';
-		System.out.println("SENDING" + message);
-		
-		Socket clientSocket;
-		try {
-			clientSocket = new Socket("localhost", port);
-			DataOutputStream outToServer = new DataOutputStream(clientSocket.getOutputStream());
-			BufferedReader inFromServer = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
-			outToServer.writeBytes(message);
-			String response = inFromServer.readLine();
-			clientSocket.close();
-			System.out.println("FROM SERVER: " + response);
-			if ("ERROR".equals(response)) {
-				return;
-			} else {
-				event.parseAndSetPriorities(response);
-			}
-		} catch (IOException e) {
-			e.printStackTrace();
-		}
-		
-		return;
-	
-		
+		JSONObject payload = new JSONObject();
+		payload.put(Constants.EVENT_CODE_KEYWORD, event.getEventCode());
+		String response = sendMessage(Constants.MESSAGE_TYPE_GET_PRIORITIES, payload);
+		if (!Constants.SERVER_ERROR.equals(response))
+			event.parseAndSetPriorities(response);
 	}
 	
+	@SuppressWarnings("unchecked")
 	public List<IntervalVote> getVotesForEvent(Event event) {
-		int port = getPort(Constants.SEND_VOTES_SERVICE);
-		if (port < 0) {
-			fClientGUI.reportError(Constants.SERVER_OFFLINE_ERROR);
-			return Collections.emptyList();
-		}
-		
-		String message = "GET_" + event.getEventCode() + '\n';
-		System.out.println("SENDING" + message);
-		
-		Socket clientSocket;
-		try {
-			clientSocket = new Socket("localhost", port);
-			DataOutputStream outToServer = new DataOutputStream(clientSocket.getOutputStream());
-			BufferedReader inFromServer = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
-			outToServer.writeBytes(message);
-			String response = inFromServer.readLine();
-			clientSocket.close();
-			System.out.println("FROM SERVER: " + response);
-			event.addVotes(response);
-		} catch (IOException e) {
-			e.printStackTrace();
-		}
-		
+		JSONObject payload = new JSONObject();
+		payload.put(Constants.EVENT_CODE_KEYWORD, event.getEventCode());
+		String response = sendMessage(Constants.MESSAGE_TYPE_GET_VOTES, payload);
+		event.addVotes(response);
 		return null;
 	}
 
@@ -331,97 +172,38 @@ public class ClientConnection {
 		getEventIntervals(selectedEvent, null);
 	}
 	
+	@SuppressWarnings("unchecked")
 	public void getEventIntervals(Event selectedEvent, String username) {
-		int port = getPort(Constants.EVENT_INTERVALS_SERVICE);
-		if (port < 0) {
-			fClientGUI.reportError(Constants.SERVER_OFFLINE_ERROR);
-			return;
-		}
-		
-		JSONObject json = new JSONObject();
-		json.put(Constants.EVENT_CODE_KEYWORD, selectedEvent.getEventCode());
+		JSONObject payload = new JSONObject();
+		payload.put(Constants.EVENT_CODE_KEYWORD, selectedEvent.getEventCode());
 		if (username != null)
-			json.put(Constants.USER_KEYWORD, username);
-		String message = json.toJSONString() + '\n';
-		System.out.println("SENDING" + message);
-		
-		Socket clientSocket;
-		try {
-			clientSocket = new Socket("localhost", port);
-			DataOutputStream outToServer = new DataOutputStream(clientSocket.getOutputStream());
-			BufferedReader inFromServer = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
-			outToServer.writeBytes(message);
-			String response = inFromServer.readLine();
-			clientSocket.close();
-			System.out.println("FROM SERVER: " + response);
-			if ("ERROR".equals(response)) {
-				return;
-			} else {
-				selectedEvent.parseAndSetIntervals(response);
-			}
-		} catch (IOException e) {
-			e.printStackTrace();
-		}
-		
-		return;
+			payload.put(Constants.USER_KEYWORD, username);
+		String response = sendMessage(Constants.MESSAGE_TYPE_GET_INTERVALS, payload);		
+		if (!"ERROR".equals(response))
+			selectedEvent.parseAndSetIntervals(response);
 	}
 
+	@SuppressWarnings("unchecked")
 	public String getEventForCode(String eventCode) {
-		int port = getPort(Constants.ADD_PRIORITY_SERVICE);
-		if (port < 0) {
-			fClientGUI.reportError(Constants.SERVER_OFFLINE_ERROR);
-			return "ERROR";
-		}
-		
-		JSONObject json = new JSONObject();
-		json.put(Constants.EVENT_CODE_KEYWORD, eventCode);
-		String message = json.toJSONString() + '\n';
-		System.out.println("SENDING" + message);
-		
-		Socket clientSocket;
-		try {
-			clientSocket = new Socket("localhost", port);
-			DataOutputStream outToServer = new DataOutputStream(clientSocket.getOutputStream());
-			BufferedReader inFromServer = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
-			outToServer.writeBytes(message);
-			String response = inFromServer.readLine();
-			clientSocket.close();
-			return response;
-		} catch (IOException e) {
-			e.printStackTrace();
-		}
-		
-		return "ERROR";
+		JSONObject payload = new JSONObject();
+		payload.put(Constants.EVENT_CODE_KEYWORD, eventCode);
+		String response = sendMessage(Constants.MESSAGE_TYPE_GET_EVENTS, payload);
+		return response;
 	}
 
+	@SuppressWarnings("unchecked")
 	public String addPriority(String eventCode, String username, int priority) {
-		int port = getPort(Constants.ADD_PRIORITY_SERVICE);
-		if (port < 0) {
-			fClientGUI.reportError(Constants.SERVER_OFFLINE_ERROR);
-			return "ERROR";
-		}
-		
-		JSONObject json = new JSONObject();
-		json.put(Constants.EVENT_CODE_KEYWORD, eventCode);
-		json.put(Constants.USER_KEYWORD, username);
-		json.put(Constants.PRIORITY_VALUE_KEYWORD, priority);
-		String message = json.toJSONString() + '\n';
-		System.out.println("SENDING" + message);
-		
-		Socket clientSocket;
-		try {
-			clientSocket = new Socket("localhost", port);
-			DataOutputStream outToServer = new DataOutputStream(clientSocket.getOutputStream());
-			BufferedReader inFromServer = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
-			outToServer.writeBytes(message);
-			String response = inFromServer.readLine();
-			clientSocket.close();
-			return response;
-		} catch (IOException e) {
-			e.printStackTrace();
-		}
-		
-		return "ERROR";
+		JSONObject payload = new JSONObject();
+		payload.put(Constants.EVENT_CODE_KEYWORD, eventCode);
+		payload.put(Constants.USER_KEYWORD, username);
+		payload.put(Constants.PRIORITY_VALUE_KEYWORD, priority);
+		String response = sendMessage(Constants.MESSAGE_TYPE_ADD_PRIORITY, payload);
+		return response;
 	}
 
+	private String generateSalt() {
+		byte[] salt = new byte[32];
+		fRandomGenerator.nextBytes(salt);
+		return Base64.getEncoder().encodeToString(salt);
+	}
 }

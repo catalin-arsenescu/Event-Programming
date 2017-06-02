@@ -22,6 +22,7 @@ import org.eclipse.swt.widgets.Text;
 import com.eventprogramming.client.ClientConnection;
 import com.eventprogramming.client.ClientGUI;
 import com.eventprogramming.client.ClientGUI.STATE;
+import com.eventprogramming.constants.Constants;
 import com.eventprogramming.event.Event;
 import com.eventprogramming.event.IntervalVote.VoteType;
 import com.eventprogramming.gui.components.EventAdminPageComposite;
@@ -32,7 +33,7 @@ public class EventAdminPageMediator extends AbstractPageMediator {
 	private static String[] identifiers = { "combo", "tabFolder", "page-composite", "dateTime",
 											"startHourSpinner", "incrementSpinner", "addButton", 
 											"generateButton", "userPriorityText", "addPriorityButton",
-											"prioritiesList", "prioritiesTable" };
+											"prioritiesList", "prioritiesTable", "intervalsTable" };
 	
 	private int lastSelectedItemIndex;
 
@@ -87,9 +88,22 @@ public class EventAdminPageMediator extends AbstractPageMediator {
 		int endHour = spinner.getSelection() + selectedEvent.getDuration();
 		if (endHour > selectedEvent.getEndHour())
 			endHour = selectedEvent.getEndHour();
-		fClientConnection.sendNewEventInterval(selectedEvent.getEventCode(), 
+		String response = fClientConnection.sendNewEventInterval(selectedEvent.getEventCode(), 
 											dateTime, spinner.getSelection(),
 											endHour);
+		if (Constants.SERVER_ERROR.equals(response))
+			return;
+		
+		addIntervalInTable(Utils.getDateString(dateTime), spinner.getSelection(), endHour);
+	}
+
+	private void addIntervalInTable(String dateTime, int startHour, int endHour) {
+		
+		Table intervalsTable = (Table) getControl("intervalsTable");
+		TableItem item = new TableItem(intervalsTable, SWT.NONE);
+		item.setText(new String[] { dateTime,
+									"" + startHour,
+									"" + endHour, "" + 0, "" + 0, "" + 0, "" + 0 });
 	}
 
 	private void insertPriorityInTable(String username, int priority) {
@@ -106,6 +120,13 @@ public class EventAdminPageMediator extends AbstractPageMediator {
 		item.setText(new String[] { username, "" + priority });
 	}
 	
+	private void clearIntervalTable() {
+		Table intervalTable = (Table) getControl("intervalsTable");
+		intervalTable.clearAll();
+		intervalTable.setItemCount(0);
+		intervalTable.setTopIndex(0);
+	}
+	
 	private boolean checkNewEventInput() {
 		DateTime dateTime = (DateTime) getControl("dateTime");
 		Event event = getSelectedEvent();
@@ -115,6 +136,15 @@ public class EventAdminPageMediator extends AbstractPageMediator {
 	}
 
 	private void generateEvents() {
+		boolean confirmed = Utils.openDialog(fClientGUI.getShell(), "Confirm", 
+				"Generating events will delete any existing ones and their associated votes.\n" + 
+				"Are you sure you want to do this?",
+				() -> {},
+				() -> {});
+		
+		if (!confirmed)
+			return;
+		
 		Spinner spinner = (Spinner) getControl("incrementSpinner");
 		int hourIncrement = spinner.getSelection();
 		Event event = getSelectedEvent();
@@ -128,12 +158,15 @@ public class EventAdminPageMediator extends AbstractPageMediator {
 		LocalDate start = startDate.toInstant().atZone(ZoneId.systemDefault()).toLocalDate();
 		LocalDate end = endDate.toInstant().atZone(ZoneId.systemDefault()).toLocalDate();
 
+		fClientConnection.deleteEventIntervals(eventCode);
+		clearIntervalTable();
 		for (LocalDate date = start; date.isBefore(end.plusDays(1)); date = date.plusDays(1)) {
 			int startHour = eventStartHour;
 			while (startHour + duration <= eventEndHour) {
 				fClientConnection.sendNewEventInterval(eventCode, 
 						date.toString(), startHour,
 						startHour + duration);
+				addIntervalInTable(date.toString(), startHour, startHour + duration);
 				startHour += hourIncrement;
 			}
 		}

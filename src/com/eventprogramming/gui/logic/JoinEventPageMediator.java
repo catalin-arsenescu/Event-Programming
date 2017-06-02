@@ -53,41 +53,6 @@ public class JoinEventPageMediator extends AbstractPageMediator {
 		if (!submittedVotes.isEmpty())
 			fClientConnection.sendEventVotes(submittedVotes);
 	}
-
-	private void register(Control control, SelectionEvent event) {
-		if (checkInput()) {
-			Text userText = (Text) getControl("userText");
-			Text passText = (Text) getControl("passText");
-			Text emailText = (Text) getControl("emailText");
-			
-			boolean registerDone = fClientConnection.sendNewUserCredentials(userText.getText(),
-					passText.getText(), emailText.getText());
-			if (registerDone)
-				fClientGUI.switchState(STATE.WELCOME);
-		} else
-			Utils.openDialog(fClientGUI.getShell(), "Error",
-					"There was an error validating your input. Please double check you introduced a valid email address!",
-					() -> {},
-					() -> {});
-	}
-	
-	private boolean checkInput() {
-		
-		Text userText = (Text) getControl("userText");
-		Text passText = (Text) getControl("passText");
-		Text emailText = (Text) getControl("emailText");
-
-		if (userText.getText().isEmpty())
-			return false;
-	
-		if (passText.getText().isEmpty())
-			return false;
-	
-		if (emailText.getText().isEmpty())
-			return false;
-		
-		return true;
-	}
 	
 	public void setEvent(Event event) {
 		this.fEvent = event;

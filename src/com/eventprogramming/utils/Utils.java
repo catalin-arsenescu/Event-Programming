@@ -7,15 +7,9 @@ import java.time.ZoneId;
 import java.util.Date;
 import java.util.GregorianCalendar;
 
-import org.eclipse.jface.dialogs.IInputValidator;
-import org.eclipse.jface.dialogs.InputDialog;
 import org.eclipse.jface.dialogs.MessageDialog;
-import org.eclipse.jface.window.Window;
 import org.eclipse.swt.widgets.DateTime;
 import org.eclipse.swt.widgets.Shell;
-
-import com.eventprogramming.event.EventCache;
-import com.sun.org.apache.bcel.internal.generic.FCMPG;
 
 public class Utils {
 
